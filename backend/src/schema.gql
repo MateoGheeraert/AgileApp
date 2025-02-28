@@ -1,0 +1,131 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  _id: ID!
+  email: String!
+  name: String!
+  createdAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type AuthResponse {
+  token: String!
+  user: User!
+}
+
+type Project {
+  _id: ID!
+  name: String!
+  description: String
+  createdAt: DateTime!
+}
+
+type Sprint {
+  _id: ID!
+  name: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  projectId: ID!
+  description: String
+  createdAt: DateTime!
+}
+
+type Ticket {
+  _id: ID!
+  title: String!
+  description: String!
+  status: TicketStatus!
+  priority: TicketPriority!
+  sprintId: ID!
+  projectId: ID!
+  assigneeId: ID
+  creatorId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum TicketStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  RESOLVED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+type Query {
+  hello: String!
+  projects: [Project!]!
+  project(id: ID!): Project!
+  sprints: [Sprint!]!
+  sprintsByProject(projectId: ID!): [Sprint!]!
+  sprint(id: ID!): Sprint!
+  tickets: [Ticket!]!
+  ticketsByProject(projectId: ID!): [Ticket!]!
+  ticketsBySprint(sprintId: ID!): [Ticket!]!
+  ticketsByAssignee(assigneeId: ID!): [Ticket!]!
+  ticket(id: ID!): Ticket!
+}
+
+type Mutation {
+  register(input: RegisterInput!): AuthResponse!
+  login(input: LoginInput!): AuthResponse!
+  createProject(name: String!, description: String): Project!
+  createSprint(input: CreateSprintInput!): Sprint!
+  updateSprint(id: ID!, input: CreateSprintInput!): Sprint!
+  removeSprint(id: ID!): Boolean!
+  createTicket(input: CreateTicketInput!): Ticket!
+  updateTicket(id: ID!, input: UpdateTicketInput!): Ticket!
+  updateTicketStatus(id: ID!, status: TicketStatus!): Ticket!
+  assignTicket(id: ID!, assigneeId: ID!): Ticket!
+  removeTicket(id: ID!): Boolean!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  name: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input CreateSprintInput {
+  name: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  projectId: String!
+  description: String
+}
+
+input CreateTicketInput {
+  title: String!
+  description: String!
+  status: TicketStatus! = TODO
+  priority: TicketPriority! = MEDIUM
+  sprintId: String!
+  projectId: String!
+  assigneeId: String
+}
+
+input UpdateTicketInput {
+  title: String
+  description: String
+  status: TicketStatus
+  priority: TicketPriority
+  sprintId: String
+  assigneeId: String
+}
