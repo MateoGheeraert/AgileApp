@@ -1,5 +1,11 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsEnum, IsMongoId, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TicketPriority, TicketStatus } from '../models/ticket.model';
 
 @InputType()
@@ -28,6 +34,16 @@ export class UpdateTicketInput {
   @IsMongoId()
   @IsOptional()
   sprintId?: string;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  estimatedHours?: number;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  spentHours?: number;
 
   @Field({ nullable: true })
   @IsMongoId()

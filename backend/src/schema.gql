@@ -43,6 +43,8 @@ type Ticket {
   description: String!
   status: TicketStatus!
   priority: TicketPriority!
+  estimatedHours: Float
+  spentHours: Float
   sprintId: ID!
   sprint: Sprint
   projectId: ID!
@@ -134,6 +136,8 @@ input CreateTicketInput {
   priority: TicketPriority! = MEDIUM
   sprintId: String!
   projectId: String!
+  estimatedHours: Float
+  spentHours: Float
   assigneeId: String
 }
 
@@ -143,5 +147,7 @@ input UpdateTicketInput {
   status: TicketStatus
   priority: TicketPriority
   sprintId: String
+  estimatedHours: Float
+  spentHours: Float
   assigneeId: String
 }

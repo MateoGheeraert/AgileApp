@@ -6,6 +6,9 @@ interface InputFieldProps {
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+  step?: string;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -14,6 +17,9 @@ const InputField: React.FC<InputFieldProps> = ({
   placeholder,
   value,
   onChange,
+  min,
+  max,
+  step,
 }) => {
   return (
     <div>
@@ -24,6 +30,9 @@ const InputField: React.FC<InputFieldProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className='w-full p-2 border border-gray-300 rounded-lg mt-1 text-black'
+        min={min}
+        max={max}
+        step={step}
       />
     </div>
   );

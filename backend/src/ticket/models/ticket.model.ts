@@ -49,6 +49,14 @@ export class Ticket extends Document {
   @Prop({ type: String, enum: TicketPriority, default: TicketPriority.MEDIUM })
   priority: TicketPriority;
 
+  @Field({ nullable: true })
+  @Prop({ required: false })
+  estimatedHours: number;
+
+  @Field({ nullable: true })
+  @Prop({ required: false })
+  spentHours: number;
+
   @Field(() => ID)
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Sprint', required: true })
   sprintId: string;

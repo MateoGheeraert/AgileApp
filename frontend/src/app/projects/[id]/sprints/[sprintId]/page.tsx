@@ -15,9 +15,10 @@ import Modal from "@/app/components/reusable/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import AuthLayout from "@/app/components/AuthLayout";
-import { Trash } from "lucide-react";
+import { Trash, Clock, ClipboardCheck } from "lucide-react";
 import SelectField from "@/app/components/reusable/SelectField";
 import InputField from "@/app/components/reusable/InputField";
+import Dropdown from "@/app/components/reusable/Dropdown";
 
 interface Ticket {
   _id: string;
@@ -27,6 +28,8 @@ interface Ticket {
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   assigneeId?: string;
   assigneeName?: string;
+  estimatedHours?: number;
+  spentHours?: number;
 }
 
 interface Sprint {
@@ -56,7 +59,12 @@ export default function SprintDetailPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [sprint, setSprint] = useState<Sprint | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+  const [loggingHoursTicket, setLoggingHoursTicket] = useState<Ticket | null>(
+    null
+  );
+  const [hoursToLog, setHoursToLog] = useState<number>(0);
   const [ticketData, setTicketData] = useState<Omit<Ticket, "_id">>({
     title: "",
     description: "",
@@ -64,6 +72,8 @@ export default function SprintDetailPage() {
     priority: "MEDIUM" as const,
     assigneeId: "",
     assigneeName: "",
+    estimatedHours: 0,
+    spentHours: 0,
   });
 
   useEffect(() => {
@@ -129,6 +139,8 @@ export default function SprintDetailPage() {
                 description
                 status
                 priority
+                estimatedHours
+                spentHours
                 assignee {
                   _id
                   name
@@ -155,6 +167,8 @@ export default function SprintDetailPage() {
           description: ticket.description,
           status: ticket.status,
           priority: ticket.priority,
+          estimatedHours: ticket.estimatedHours || 0,
+          spentHours: ticket.spentHours || 0,
           assigneeId: ticket.assignee?._id || "",
           assigneeName: ticket.assignee?.name || "Unassigned",
         })) || [];
@@ -165,40 +179,6 @@ export default function SprintDetailPage() {
       setTickets([]);
     }
   }
-
-  // async function fetchProjectUsers() {
-  //   try {
-  //     const response = await fetch("http://localhost:4000/graphql", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${Cookies.get("token")}`,
-  //       },
-  //       body: JSON.stringify({
-  //         query: `
-  //           query {
-  //             users {
-  //               _id
-  //               name
-  //               email
-  //             }
-  //           }
-  //         `,
-  //       }),
-  //     });
-
-  //     const result = await response.json();
-
-  //     if (result.errors) {
-  //       console.error("GraphQL errors:", result.errors);
-  //       return;
-  //     }
-
-  //     setUsers(result.data?.users || []);
-  //   } catch (error) {
-  //     console.error("Failed to fetch users:", error);
-  //   }
-  // }
 
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
@@ -397,6 +377,61 @@ export default function SprintDetailPage() {
     }
   }
 
+  async function logHours(e: React.FormEvent) {
+    e.preventDefault();
+    if (!loggingHoursTicket) return;
+
+    try {
+      const currentSpentHours = loggingHoursTicket.spentHours || 0;
+      const newSpentHours = currentSpentHours + hoursToLog;
+
+      const response = await fetch("http://localhost:4000/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("token")}`,
+        },
+        body: JSON.stringify({
+          query: `
+            mutation UpdateTicket($id: ID!, $input: UpdateTicketInput!) {
+              updateTicket(id: $id, input: $input) {
+                _id
+                spentHours
+              }
+            }
+          `,
+          variables: {
+            id: loggingHoursTicket._id,
+            input: { spentHours: newSpentHours },
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.errors) {
+        console.error("GraphQL errors:", result.errors);
+        return;
+      }
+
+      // Update the ticket in the local state
+      setTickets(
+        tickets.map((t) =>
+          t._id === loggingHoursTicket._id
+            ? { ...t, spentHours: newSpentHours }
+            : t
+        )
+      );
+
+      // Close the modal and reset
+      setIsHoursModalOpen(false);
+      setLoggingHoursTicket(null);
+      setHoursToLog(0);
+    } catch (error) {
+      console.error("Error logging hours:", error);
+    }
+  }
+
   const ticketStatusColumns = [
     { id: "TODO", label: "To Do" },
     { id: "IN_PROGRESS", label: "In Progress" },
@@ -428,6 +463,8 @@ export default function SprintDetailPage() {
                 priority: "MEDIUM" as const,
                 assigneeId: "",
                 assigneeName: "",
+                estimatedHours: 0,
+                spentHours: 0,
               });
             }}
           >
@@ -477,6 +514,9 @@ export default function SprintDetailPage() {
                                         assigneeId: ticket.assigneeId || "",
                                         assigneeName:
                                           ticket.assigneeName || "Unassigned",
+                                        estimatedHours:
+                                          ticket.estimatedHours || 0,
+                                        spentHours: ticket.spentHours || 0,
                                       });
                                       setIsModalOpen(true);
                                     }}
@@ -488,16 +528,29 @@ export default function SprintDetailPage() {
                                       {ticket.description}
                                     </p>
                                   </div>
-                                  <Button
-                                    variant='danger'
-                                    className='px-2 py-1 text-xs'
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteTicket(ticket._id);
-                                    }}
-                                  >
-                                    <Trash className='w-4 h-4' />
-                                  </Button>
+                                  <Dropdown>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLoggingHoursTicket(ticket);
+                                        setIsHoursModalOpen(true);
+                                      }}
+                                      className='w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                                    >
+                                      <Clock className='w-4 h-4 mr-2' /> Log
+                                      Hours
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTicket(ticket._id);
+                                      }}
+                                      className='w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100'
+                                    >
+                                      <Trash className='w-4 h-4 mr-2' /> Delete
+                                      Ticket
+                                    </button>
+                                  </Dropdown>
                                 </div>
                                 <div className='mt-2 flex justify-between items-center'>
                                   <span
@@ -512,6 +565,55 @@ export default function SprintDetailPage() {
                                   >
                                     {ticket.priority}
                                   </span>
+                                </div>
+
+                                {/* Hours information with progress bar */}
+                                <div className='mt-2 text-xs text-gray-600'>
+                                  <div className='flex justify-between mb-1'>
+                                    <div
+                                      className='flex items-center'
+                                      title='Estimated hours'
+                                    >
+                                      <ClipboardCheck className='w-3 h-3 mr-1' />
+                                      <span>
+                                        Est: {ticket.estimatedHours || 0}h
+                                      </span>
+                                    </div>
+                                    <div
+                                      className='flex items-center'
+                                      title='Spent hours'
+                                    >
+                                      <Clock className='w-3 h-3 mr-1' />
+                                      <span>
+                                        Spent: {ticket.spentHours || 0}h
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Progress bar */}
+                                  {(ticket.estimatedHours || 0) > 0 && (
+                                    <div className='h-1.5 bg-gray-200 rounded-full overflow-hidden'>
+                                      <div
+                                        className={`h-full ${
+                                          (ticket.spentHours || 0) >
+                                          (ticket.estimatedHours || 0)
+                                            ? "bg-red-500"
+                                            : (ticket.spentHours || 0) >=
+                                              (ticket.estimatedHours || 0) * 0.8
+                                            ? "bg-yellow-500"
+                                            : "bg-green-500"
+                                        }`}
+                                        style={{
+                                          width: `${Math.min(
+                                            ((ticket.spentHours || 0) /
+                                              (ticket.estimatedHours || 1)) *
+                                              100,
+                                            100
+                                          )}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -540,6 +642,8 @@ export default function SprintDetailPage() {
                 priority: "MEDIUM" as const,
                 assigneeId: "",
                 assigneeName: "",
+                estimatedHours: 0,
+                spentHours: 0,
               });
             }}
           >
@@ -603,15 +707,29 @@ export default function SprintDetailPage() {
                 </select>
               </div>
 
+              <InputField
+                label='Estimated Hours'
+                type='number'
+                value={ticketData.estimatedHours?.toString() || "0"}
+                onChange={(e) =>
+                  setTicketData({
+                    ...ticketData,
+                    estimatedHours: parseInt(e) || 0,
+                  })
+                }
+              />
+
               {editingTicket && (
-                <SelectField<Ticket["status"]>
-                  label='Status'
-                  value={ticketData.status}
-                  onChange={(newValue) =>
-                    setTicketData({ ...ticketData, status: newValue })
-                  }
-                  options={statusOptions}
-                />
+                <>
+                  <SelectField<Ticket["status"]>
+                    label='Status'
+                    value={ticketData.status}
+                    onChange={(newValue) =>
+                      setTicketData({ ...ticketData, status: newValue })
+                    }
+                    options={statusOptions}
+                  />
+                </>
               )}
 
               <div className='flex justify-end space-x-3'>
@@ -627,6 +745,8 @@ export default function SprintDetailPage() {
                       priority: "MEDIUM" as const,
                       assigneeId: "",
                       assigneeName: "",
+                      estimatedHours: 0,
+                      spentHours: 0,
                     });
                   }}
                 >
@@ -635,6 +755,147 @@ export default function SprintDetailPage() {
                 <Button type='submit'>
                   {editingTicket ? "Update" : "Create"}
                 </Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+
+        {/* Modal for Logging Hours */}
+        {isHoursModalOpen && loggingHoursTicket && (
+          <Modal
+            title={`Log Hours - ${loggingHoursTicket.title}`}
+            onClose={() => {
+              setIsHoursModalOpen(false);
+              setLoggingHoursTicket(null);
+              setHoursToLog(0);
+            }}
+          >
+            <div className='mb-6 bg-gray-50 p-4 rounded-lg'>
+              <h3 className='font-medium text-gray-800 mb-3'>
+                Time Tracking Summary
+              </h3>
+
+              <div className='flex justify-between text-sm mb-2'>
+                <span className='text-gray-600'>Estimated:</span>
+                <span className='font-medium'>
+                  {loggingHoursTicket.estimatedHours || 0} hours
+                </span>
+              </div>
+
+              <div className='flex justify-between text-sm mb-3'>
+                <span className='text-gray-600'>Spent so far:</span>
+                <span className='font-medium'>
+                  {loggingHoursTicket.spentHours || 0} hours
+                </span>
+              </div>
+
+              <div className='h-2 bg-gray-200 rounded-full overflow-hidden'>
+                <div
+                  className={`h-full ${
+                    (loggingHoursTicket.spentHours || 0) >
+                    (loggingHoursTicket.estimatedHours || 0)
+                      ? "bg-red-500"
+                      : "bg-green-500"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      ((loggingHoursTicket.spentHours || 0) /
+                        (loggingHoursTicket.estimatedHours || 1)) *
+                        100,
+                      100
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+
+              {(loggingHoursTicket.spentHours || 0) >
+                (loggingHoursTicket.estimatedHours || 0) && (
+                <p className='text-xs text-red-600 mt-2'>
+                  ⚠️ Time spent exceeds the estimated time by{" "}
+                  {(
+                    (loggingHoursTicket.spentHours || 0) -
+                    (loggingHoursTicket.estimatedHours || 0)
+                  ).toFixed(2)}{" "}
+                  hours
+                </p>
+              )}
+
+              {(loggingHoursTicket.estimatedHours || 0) > 0 && (
+                <p className='text-xs text-gray-600 mt-2'>
+                  Remaining:{" "}
+                  {Math.max(
+                    0,
+                    (loggingHoursTicket.estimatedHours || 0) -
+                      (loggingHoursTicket.spentHours || 0)
+                  ).toFixed(2)}{" "}
+                  hours
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={logHours} className='space-y-4'>
+              <div className='mb-4'>
+                <h3 className='font-medium text-gray-800 mb-2'>Log Time</h3>
+                <p className='text-sm text-gray-600 mb-4'>
+                  Record the time you&apos;ve spent working on this task.
+                </p>
+
+                <div className='flex items-end gap-2'>
+                  <div className='flex-1'>
+                    <InputField
+                      label='Hours'
+                      type='number'
+                      value={hoursToLog.toString()}
+                      onChange={(e) => setHoursToLog(parseFloat(e) || 0)}
+                      min='0.25'
+                      step='0.25'
+                    />
+                  </div>
+
+                  <div className='mb-1'>
+                    <Button
+                      variant='secondary'
+                      className='px-2 py-1 text-xs'
+                      onClick={() => setHoursToLog(0.5)}
+                    >
+                      0.5h
+                    </Button>
+                  </div>
+
+                  <div className='mb-1'>
+                    <Button
+                      variant='secondary'
+                      className='px-2 py-1 text-xs'
+                      onClick={() => setHoursToLog(1)}
+                    >
+                      1h
+                    </Button>
+                  </div>
+
+                  <div className='mb-1'>
+                    <Button
+                      variant='secondary'
+                      className='px-2 py-1 text-xs'
+                      onClick={() => setHoursToLog(2)}
+                    >
+                      2h
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className='flex justify-end space-x-3'>
+                <Button
+                  variant='outline'
+                  onClick={() => {
+                    setIsHoursModalOpen(false);
+                    setLoggingHoursTicket(null);
+                    setHoursToLog(0);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type='submit'>Log Hours</Button>
               </div>
             </form>
           </Modal>

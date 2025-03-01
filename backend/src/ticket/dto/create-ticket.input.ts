@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -37,6 +38,16 @@ export class CreateTicketInput {
   @Field()
   @IsMongoId()
   projectId: string;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  estimatedHours?: number;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  spentHours?: number;
 
   @Field({ nullable: true })
   @IsMongoId()
