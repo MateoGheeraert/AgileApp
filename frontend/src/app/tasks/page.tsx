@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
-import Button from "../components/Button";
+import Button from "../components/reusable/Button";
 import Cookies from "js-cookie";
 
 interface Task {

@@ -117,10 +117,10 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className='bg-white p-6 rounded-lg shadow-md'>
           <h1 className='text-2xl font-bold text-gray-800'>
-            Welcome back, {user?.name}!
+            Welkom terug, {user?.name}!
           </h1>
           <p className='text-gray-600 mt-2'>
-            Here&apos;s what&apos;s happening with your projects today.
+            Hier kan je zien wat gebeurt op jouw projecten vandaag.
           </p>
         </div>
 
@@ -137,13 +137,13 @@ export default function DashboardPage() {
               href='/projects'
               className='mt-2 text-blue-500 text-sm hover:underline block'
             >
-              View all projects →
+              Bekijk alle projecten →
             </Link>
           </div>
 
           <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500'>
             <h2 className='text-gray-500 text-sm font-medium uppercase'>
-              Active Sprints
+              Actieve sprints
             </h2>
             <p className='mt-2 text-3xl font-bold text-gray-800'>
               {stats.activeSprints}
@@ -152,13 +152,13 @@ export default function DashboardPage() {
               href='/calendar'
               className='mt-2 text-green-500 text-sm hover:underline block'
             >
-              View calendar →
+              Bekijk kalender →
             </Link>
           </div>
 
           <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500'>
             <h2 className='text-gray-500 text-sm font-medium uppercase'>
-              Completed Tasks
+              Voltooide taken
             </h2>
             <p className='mt-2 text-3xl font-bold text-gray-800'>
               {stats.completedTasks}
@@ -167,13 +167,13 @@ export default function DashboardPage() {
               href='/tasks'
               className='mt-2 text-purple-500 text-sm hover:underline block'
             >
-              View tasks →
+              Bekijk taken →
             </Link>
           </div>
 
           <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500'>
             <h2 className='text-gray-500 text-sm font-medium uppercase'>
-              Pending Tasks
+              Open taken
             </h2>
             <p className='mt-2 text-3xl font-bold text-gray-800'>
               {stats.pendingTasks}
@@ -182,7 +182,7 @@ export default function DashboardPage() {
               href='/tasks'
               className='mt-2 text-yellow-500 text-sm hover:underline block'
             >
-              View tasks →
+              Bekijk taken →
             </Link>
           </div>
         </div>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <div className='bg-white p-6 rounded-lg shadow-md'>
           <h2 className='text-xl font-bold text-gray-800 mb-4'>
-            Recent Activity
+            Recentie activiteit
           </h2>
 
           {loading ? (
@@ -237,7 +237,7 @@ export default function DashboardPage() {
         {/* Quick Links */}
         <div className='bg-white p-6 rounded-lg shadow-md'>
           <h2 className='text-xl font-bold text-gray-800 mb-4'>
-            Quick Actions
+            Snelle acties
           </h2>
           <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
             <Link
@@ -245,28 +245,28 @@ export default function DashboardPage() {
               className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
             >
               <div className='text-2xl mb-2'>📁</div>
-              <p className='text-gray-800 font-medium'>New Project</p>
+              <p className='text-gray-800 font-medium'>Nieuw project</p>
             </Link>
             <Link
               href='/tasks'
               className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
             >
               <div className='text-2xl mb-2'>✓</div>
-              <p className='text-gray-800 font-medium'>Add Task</p>
+              <p className='text-gray-800 font-medium'>Nieuwe taak</p>
             </Link>
             <Link
               href='/calendar'
               className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
             >
               <div className='text-2xl mb-2'>🏃</div>
-              <p className='text-gray-800 font-medium'>Start Sprint</p>
+              <p className='text-gray-800 font-medium'>Start sprint</p>
             </Link>
             <Link
               href='/profile'
               className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
             >
               <div className='text-2xl mb-2'>👤</div>
-              <p className='text-gray-800 font-medium'>Edit Profile</p>
+              <p className='text-gray-800 font-medium'>Bewerk profiel</p>
             </Link>
           </div>
         </div>

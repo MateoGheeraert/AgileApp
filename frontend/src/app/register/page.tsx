@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import Button from "../components/Button";
+import Button from "../components/reusable/Button";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -26,7 +26,7 @@ export default function RegisterPage() {
     <div className='min-h-screen flex items-center justify-center bg-gray-200'>
       <div className='max-w-md w-full p-8 bg-white rounded-lg shadow-2xl border border-gray-300'>
         <h2 className='text-center text-3xl font-extrabold text-black'>
-          Create your account
+          Maak je account
         </h2>
         <form className='mt-6 space-y-4' onSubmit={handleSubmit}>
           {error && (
@@ -39,7 +39,7 @@ export default function RegisterPage() {
                 htmlFor='name'
                 className='block text-sm font-medium text-black'
               >
-                Full Name
+                Naam
               </label>
               <input
                 id='name'
@@ -47,7 +47,7 @@ export default function RegisterPage() {
                 type='text'
                 required
                 className='mt-1 block w-full p-3 border border-gray-400 rounded-lg focus:ring-primaryBlue-500 focus:border-primaryBlue-500 text-black'
-                placeholder='Full Name'
+                placeholder='Naam'
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -57,7 +57,7 @@ export default function RegisterPage() {
                 htmlFor='email'
                 className='block text-sm font-medium text-black'
               >
-                Email address
+                Email adres
               </label>
               <input
                 id='email'
@@ -75,7 +75,7 @@ export default function RegisterPage() {
                 htmlFor='password'
                 className='block text-sm font-medium text-black'
               >
-                Password
+                Wachtwoord
               </label>
               <input
                 id='password'
@@ -92,7 +92,7 @@ export default function RegisterPage() {
 
           <div className='flex justify-center'>
             <Button type='submit' className='w-full max-w-xs'>
-              Sign up
+              Registreer
             </Button>
           </div>
 
@@ -101,7 +101,7 @@ export default function RegisterPage() {
               href='/login'
               className='text-primaryBlue-500 hover:text-primaryBlue-600'
             >
-              Already have an account? Sign in
+              Heb je al een account? Inloggen
             </Link>
           </div>
         </form>

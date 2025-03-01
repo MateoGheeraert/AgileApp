@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
 import Link from "next/link";
-import Button from "@/app/components/Button";
+import Button from "@/app/components/reusable/Button";
 import { format } from "date-fns";
 import AuthLayout from "@/app/components/AuthLayout";
-import Modal from "@/app/components/Modal";
-import InputField from "@/app/components/InputField";
+import Modal from "@/app/components/reusable/Modal";
+import InputField from "@/app/components/reusable/InputField";
 import { Pencil, Trash } from "lucide-react";
 
 interface Sprint {

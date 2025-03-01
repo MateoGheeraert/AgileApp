@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, SetStateAction } from "react";
 import Link from "next/link";
 import Cookies from "js-cookie";
-import Button from "../components/Button";
+import Button from "../components/reusable/Button";
 import AuthLayout from "../components/AuthLayout";
-import Modal from "../components/Modal";
-import InputField from "../components/InputField";
-
+import Modal from "../components/reusable/Modal";
+import InputField from "../components/reusable/InputField";
 interface Project {
   _id: string;
   name: string;
@@ -106,33 +105,32 @@ export default function ProjectsPage() {
     <AuthLayout>
       <div>
         <div className='flex justify-between items-center mb-6'>
-          <h1 className='text-2xl font-bold text-gray-800'>Projects</h1>
-          <Button onClick={() => setisModalOpen(true)}>New Project</Button>
+          <h1 className='text-2xl font-bold text-gray-800'>Projecten</h1>
+          <Button onClick={() => setisModalOpen(true)}>Nieuw project</Button>
         </div>
 
         {error && <div className='mb-4 text-red-500 text-center'>{error}</div>}
 
         {/* Create Project Form */}
         {isModalOpen && (
-          <Modal
-            title='Create New Project'
-            onClose={() => setisModalOpen(false)}
-          >
+          <Modal title='Nieuw project' onClose={() => setisModalOpen(false)}>
             {" "}
             <form onSubmit={handleCreateProject}>
               <div className='space-y-4'>
                 <InputField
-                  label='Project Name'
-                  placeholder='Enter project name'
+                  label='Project naam'
+                  placeholder='Voer project naam in'
                   value={newProjectName}
-                  onChange={(newValue) => setNewProjectName(newValue)}
+                  onChange={(newValue: SetStateAction<string>) =>
+                    setNewProjectName(newValue)
+                  }
                 />
                 <div>
                   <label
                     htmlFor='description'
                     className='block text-sm font-medium text-gray-700'
                   >
-                    Description (optional)
+                    Beschrijving (optioneel)
                   </label>
                   <textarea
                     id='description'
@@ -147,9 +145,9 @@ export default function ProjectsPage() {
                     onClick={() => setisModalOpen(false)}
                     type='button'
                   >
-                    Cancel
+                    Annuleer
                   </Button>
-                  <Button type='submit'>Create Project</Button>
+                  <Button type='submit'>Maak project</Button>
                 </div>
               </div>
             </form>
@@ -166,7 +164,7 @@ export default function ProjectsPage() {
             {projects.length === 0 ? (
               <div className='col-span-full text-center py-12 bg-white rounded-lg shadow-md'>
                 <p className='text-gray-500'>
-                  No projects found. Create your first project!
+                  Geen projecten gevonden. Maak je eerste project!
                 </p>
               </div>
             ) : (
@@ -187,7 +185,7 @@ export default function ProjectsPage() {
                         </p>
                       )}
                       <p className='mt-2 text-xs text-gray-500'>
-                        Created{" "}
+                        Aangemaakt op{" "}
                         {new Date(project.createdAt).toLocaleDateString()}
                       </p>
                     </div>

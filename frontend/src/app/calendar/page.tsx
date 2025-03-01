@@ -64,6 +64,7 @@ export default function CalendarPage() {
         if (errors) throw new Error(errors[0].message);
 
         setSprints(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data.activeSprints.map((sprint: any) => ({
             _id: sprint._id,
             name: sprint.name,
@@ -100,19 +101,19 @@ export default function CalendarPage() {
         <div className='flex space-x-2'>
           <button
             onClick={prevMonth}
-            className='p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors'
+            className='p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-black'
           >
             &lt; Prev
           </button>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className='p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors'
+            className='p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors text-black'
           >
             Today
           </button>
           <button
             onClick={nextMonth}
-            className='p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors'
+            className='p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-black'
           >
             Next &gt;
           </button>
@@ -122,7 +123,15 @@ export default function CalendarPage() {
   };
 
   const renderCalendarDays = () => {
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const days = [
+      "Zondag",
+      "Maandag",
+      "Dinsdag",
+      "Woensdag",
+      "Donderdag",
+      "Vrijdag",
+      "Zaterdag",
+    ];
 
     return (
       <div className='grid grid-cols-7 gap-1 mb-1'>
@@ -250,10 +259,10 @@ export default function CalendarPage() {
       <div className='space-y-6'>
         <div className='bg-white p-6 rounded-lg shadow-md'>
           <h1 className='text-2xl font-bold text-gray-800 mb-2'>
-            Sprint Calendar
+            Sprint kalender
           </h1>
           <p className='text-gray-600'>
-            View all your active sprints across projects
+            Bekijk alle je actieve sprints over projecten
           </p>
         </div>
 
@@ -275,7 +284,7 @@ export default function CalendarPage() {
 
         <div className='bg-white p-6 rounded-lg shadow-md'>
           <h2 className='text-xl font-bold text-gray-800 mb-4'>
-            All Active Sprints
+            Alle actieve sprints
           </h2>
 
           <div className='space-y-4'>
@@ -291,7 +300,7 @@ export default function CalendarPage() {
                     Start: {format(new Date(sprint.startDate), "MMM d, yyyy")}
                   </span>
                   <span>
-                    End: {format(new Date(sprint.endDate), "MMM d, yyyy")}
+                    Eind: {format(new Date(sprint.endDate), "MMM d, yyyy")}
                   </span>
                 </div>
               </div>

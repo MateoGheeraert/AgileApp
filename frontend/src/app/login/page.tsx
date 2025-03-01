@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import Button from "../components/Button";
+import Button from "../components/reusable/Button";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -41,11 +41,9 @@ export default function LoginPage() {
       await login(email, password);
     } catch (err) {
       console.error("Login error:", err);
-      // Error will be set by auth context and displayed via useEffect
     }
   };
 
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gray-200'>
@@ -60,7 +58,7 @@ export default function LoginPage() {
     <div className='min-h-screen flex items-center justify-center bg-gray-200'>
       <div className='max-w-md w-full p-8 bg-white rounded-lg shadow-2xl border border-gray-300'>
         <h2 className='text-center text-3xl font-extrabold text-black'>
-          Sign in to your account
+          Inloggen
         </h2>
         <form className='mt-6 space-y-4' onSubmit={handleSubmit}>
           {localError && (
@@ -72,7 +70,7 @@ export default function LoginPage() {
                 htmlFor='email'
                 className='block text-sm font-medium text-black'
               >
-                Email address
+                Email adres
               </label>
               <input
                 id='email'
@@ -90,7 +88,7 @@ export default function LoginPage() {
                 htmlFor='password'
                 className='block text-sm font-medium text-black'
               >
-                Password
+                Wachtwoord
               </label>
               <input
                 id='password'
@@ -119,7 +117,7 @@ export default function LoginPage() {
               href='/register'
               className='text-primaryBlue-500 hover:text-primaryBlue-600'
             >
-              Dont have an account? Sign up
+              Heb je nog geen account? Registreer je
             </Link>
           </div>
         </form>

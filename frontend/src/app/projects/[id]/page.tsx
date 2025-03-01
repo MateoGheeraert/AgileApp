@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
-import Button from "@/app/components/Button";
+import Button from "@/app/components/reusable/Button";
 import AuthLayout from "@/app/components/AuthLayout";
 
 interface Project {
@@ -72,7 +72,7 @@ export default function ProjectPage() {
             href='/dashboard'
             className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
           >
-            ← Back to Projects
+            ← Terug naar projecten
           </Link>
         </div>
 
@@ -92,7 +92,7 @@ export default function ProjectPage() {
               href={`/projects/${params.id}/sprints`}
               className='w-full max-w-xs'
             >
-              View Sprints
+              Bekijk sprints
             </Button>
           </div>
         </div>

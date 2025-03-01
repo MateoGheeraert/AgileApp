@@ -10,13 +10,14 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import Button from "@/app/components/Button";
-import Modal from "@/app/components/Modal";
+import Button from "@/app/components/reusable/Button";
+import Modal from "@/app/components/reusable/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import AuthLayout from "@/app/components/AuthLayout";
-import SelectField from "@/app/components/SelectField";
 import { Trash } from "lucide-react";
+import SelectField from "@/app/components/reusable/SelectField";
+import InputField from "@/app/components/reusable/InputField";
 
 interface Ticket {
   _id: string;
@@ -413,7 +414,7 @@ export default function SprintDetailPage() {
               href={`/projects/${params.id}/sprints`}
               className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
             >
-              ← Back to Projects
+              ← Terug naar projecten
             </Link>
           </div>
           <Button
@@ -430,7 +431,7 @@ export default function SprintDetailPage() {
               });
             }}
           >
-            New Ticket
+            Nieuwe taak
           </Button>
         </div>
 
@@ -544,17 +545,11 @@ export default function SprintDetailPage() {
           >
             <form onSubmit={createOrUpdateTicket} className='space-y-4'>
               <div>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Title
-                </label>
-                <input
+                <InputField
+                  label='Title'
                   type='text'
-                  required
                   value={ticketData.title}
-                  onChange={(e) =>
-                    setTicketData({ ...ticketData, title: e.target.value })
-                  }
-                  className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
+                  onChange={(e) => setTicketData({ ...ticketData, title: e })}
                 />
               </div>
 
@@ -571,7 +566,7 @@ export default function SprintDetailPage() {
                       description: e.target.value,
                     })
                   }
-                  className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
+                  className='mt-1 w-full p-2 border border-gray-300 rounded-lg text-black'
                   rows={3}
                 />
               </div>
