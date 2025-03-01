@@ -5,8 +5,9 @@ import { User } from './models/user.model';
 import { RegisterInput } from './dto/register.input';
 import { LoginInput } from './dto/login.input';
 import { AuthResponse } from './models/auth.model';
-import { hash, compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+// Import bcrypt with require to avoid TypeScript errors
+const bcrypt = require('bcrypt');
 
 @Injectable()
 export class AuthService {
@@ -30,32 +31,55 @@ export class AuthService {
       throw new UnauthorizedException('User with this email already exists');
     }
 
-    const hashedPassword = await hash(registerInput.password, 10);
-    const user = new this.userModel({
-      email: registerInput.email,
-      passwordHash: hashedPassword,
-      name: registerInput.name,
-    });
+    try {
+      // Hash the password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(
+        registerInput.password,
+        saltRounds,
+      );
 
-    await user.save();
-    const token = this.generateToken(user);
+      // Create and save the user
+      const user = new this.userModel({
+        email: registerInput.email,
+        passwordHash: hashedPassword,
+        name: registerInput.name,
+      });
 
-    return { token, user };
+      await user.save();
+      const token = this.generateToken(user);
+
+      return { token, user };
+    } catch (err) {
+      console.error('Registration error:', err);
+      throw new UnauthorizedException('Error during registration process');
+    }
   }
 
   async login(loginInput: LoginInput): Promise<AuthResponse> {
-    const user = await this.userModel.findOne({ email: loginInput.email });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    try {
+      const user = await this.userModel.findOne({ email: loginInput.email });
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
-    const isValid = await compare(loginInput.password, user.passwordHash);
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+      const isValid = await bcrypt.compare(
+        loginInput.password,
+        user.passwordHash,
+      );
+      if (!isValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
-    const token = this.generateToken(user);
-    return { token, user };
+      const token = this.generateToken(user);
+      return { token, user };
+    } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        throw err;
+      }
+      console.error('Login error:', err);
+      throw new UnauthorizedException('Error during login process');
+    }
   }
 
   async validateUser(userId: string): Promise<User | null> {

@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Sprint } from './models/sprint.model';
 import { CreateSprintInput } from './dto/create-sprint.input';
+import { UpdateSprintInput } from './dto/update-sprint.input';
 
 @Injectable()
 export class SprintService {
@@ -29,10 +30,7 @@ export class SprintService {
     return sprint;
   }
 
-  async update(
-    id: string,
-    updateData: Partial<CreateSprintInput>,
-  ): Promise<Sprint> {
+  async update(id: string, updateData: UpdateSprintInput): Promise<Sprint> {
     const sprint = await this.sprintModel.findByIdAndUpdate(
       id,
       { $set: updateData },

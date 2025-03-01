@@ -1,5 +1,5 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, UnauthorizedException } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { Ticket, TicketStatus } from './models/ticket.model';
 import { CreateTicketInput } from './dto/create-ticket.input';
@@ -46,8 +46,11 @@ export class TicketResolver {
   @Mutation(() => Ticket)
   async createTicket(
     @Args('input') createTicketInput: CreateTicketInput,
-    @CurrentUser() userId: string,
+    @CurrentUser() userId?: string,
   ): Promise<Ticket> {
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.ticketService.create(createTicketInput, userId);
   }
 
@@ -63,8 +66,11 @@ export class TicketResolver {
   async updateTicketStatus(
     @Args('id', { type: () => ID }) id: string,
     @Args('status', { type: () => TicketStatus }) status: TicketStatus,
-    @CurrentUser() userId: string,
+    @CurrentUser() userId?: string,
   ): Promise<Ticket> {
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.ticketService.updateStatus(id, status, userId);
   }
 

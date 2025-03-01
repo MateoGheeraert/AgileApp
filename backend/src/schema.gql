@@ -83,7 +83,7 @@ type Mutation {
   login(input: LoginInput!): AuthResponse!
   createProject(name: String!, description: String): Project!
   createSprint(input: CreateSprintInput!): Sprint!
-  updateSprint(id: ID!, input: CreateSprintInput!): Sprint!
+  updateSprint(id: ID!, input: UpdateSprintInput!): Sprint!
   removeSprint(id: ID!): Boolean!
   createTicket(input: CreateTicketInput!): Ticket!
   updateTicket(id: ID!, input: UpdateTicketInput!): Ticket!
@@ -108,6 +108,13 @@ input CreateSprintInput {
   startDate: DateTime!
   endDate: DateTime!
   projectId: String!
+  description: String
+}
+
+input UpdateSprintInput {
+  name: String
+  startDate: DateTime
+  endDate: DateTime
   description: String
 }
 

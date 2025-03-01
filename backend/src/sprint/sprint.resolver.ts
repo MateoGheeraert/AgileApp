@@ -2,6 +2,7 @@ import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { SprintService } from './sprint.service';
 import { Sprint } from './models/sprint.model';
 import { CreateSprintInput } from './dto/create-sprint.input';
+import { UpdateSprintInput } from './dto/update-sprint.input';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -37,7 +38,7 @@ export class SprintResolver {
   @Mutation(() => Sprint)
   async updateSprint(
     @Args('id', { type: () => ID }) id: string,
-    @Args('input') updateSprintInput: CreateSprintInput,
+    @Args('input') updateSprintInput: UpdateSprintInput,
   ): Promise<Sprint> {
     return this.sprintService.update(id, updateSprintInput);
   }

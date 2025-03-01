@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import Button from "../components/Button";
 
 interface Project {
   _id: string;
@@ -97,28 +98,24 @@ export default function DashboardPage() {
 
   return (
     <div className='min-h-screen bg-gray-100'>
+      {/* Navbar */}
       <nav className='bg-white shadow-sm'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between h-16'>
+          <div className='flex justify-between h-16 items-center'>
+            <h1 className='text-xl text-black font-semibold'>Projects</h1>
             <div className='flex items-center'>
-              <h1 className='text-xl font-semibold'>Projects</h1>
-            </div>
-            <div className='flex items-center'>
-              <span className='text-gray-700 mr-4'>Welcome, {user?.name}</span>
-              <button
-                onClick={() => setIsCreating(true)}
-                className='bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700'
-              >
-                New Project
-              </button>
+              <span className='text-black mr-4'>Welcome, {user?.name}</span>
+              <Button onClick={() => setIsCreating(true)}>New Project</Button>
             </div>
           </div>
         </div>
       </nav>
 
+      {/* Main Content */}
       <main className='max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'>
         {error && <div className='mb-4 text-red-500 text-center'>{error}</div>}
 
+        {/* Create Project Form */}
         {isCreating && (
           <div className='mb-8 bg-white shadow sm:rounded-lg p-6'>
             <h2 className='text-lg font-medium mb-4'>Create New Project</h2>
@@ -135,7 +132,7 @@ export default function DashboardPage() {
                     type='text'
                     id='name'
                     required
-                    className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2'
+                    className='mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2'
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                   />
@@ -149,31 +146,26 @@ export default function DashboardPage() {
                   </label>
                   <textarea
                     id='description'
-                    className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2'
+                    className='mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2'
                     value={newProjectDescription}
                     onChange={(e) => setNewProjectDescription(e.target.value)}
                   />
                 </div>
                 <div className='flex justify-end space-x-3'>
-                  <button
-                    type='button'
+                  <Button
+                    variant='outline'
                     onClick={() => setIsCreating(false)}
-                    className='bg-white text-gray-700 px-4 py-2 border rounded-md hover:bg-gray-50'
                   >
                     Cancel
-                  </button>
-                  <button
-                    type='submit'
-                    className='bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700'
-                  >
-                    Create Project
-                  </button>
+                  </Button>
+                  <Button type='submit'>Create Project</Button>
                 </div>
               </div>
             </form>
           </div>
         )}
 
+        {/* Projects Grid */}
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
           {projects.map((project) => (
             <Link
