@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
 import Button from "../components/Button";
+import Cookies from "js-cookie";
 
 interface Task {
   _id: string;
   title: string;
   description?: string;
-  status: "todo" | "in_progress" | "done";
-  priority: "low" | "medium" | "high";
+  status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "RESOLVED";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   projectId: string;
   projectName: string;
   sprintId?: string;
@@ -19,98 +20,113 @@ interface Task {
   createdAt: string;
 }
 
+interface TicketResponse {
+  _id: string;
+  title: string;
+  description: string;
+  status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "RESOLVED";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  project?: {
+    _id: string;
+    name: string;
+  };
+  sprint?: {
+    _id: string;
+    name: string;
+  };
+  assignee?: {
+    _id: string;
+    name: string;
+  };
+  createdAt: string;
+}
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState<"all" | "todo" | "in_progress" | "done">(
-    "all"
-  );
+  const [filter, setFilter] = useState<
+    "ALL" | "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "RESOLVED"
+  >("ALL");
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [filter]);
 
   const fetchTasks = async () => {
     setLoading(true);
+    setError("");
+
     try {
-      // In a real app, you would fetch this from your API
-      // For now, we'll use mock data
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch("http://localhost:4000/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("token")}`,
+        },
+        body: JSON.stringify({
+          query: `
+            query {
+              ticketsWithDetails {
+                _id
+                title
+                description
+                status
+                priority
+                project {
+                  _id
+                  name
+                }
+                sprint {
+                  _id
+                  name
+                }
+                assignee {
+                  _id
+                  name
+                }
+                createdAt
+              }
+            }
+          `,
+        }),
+      });
 
-      // Mock data
-      const mockTasks: Task[] = [
-        {
-          _id: "1",
-          title: "Create login page",
-          description:
-            "Implement the login page with email and password fields",
-          status: "done",
-          priority: "high",
-          projectId: "p1",
-          projectName: "Website Redesign",
-          sprintId: "s1",
-          sprintName: "Sprint 1: Initial Setup",
-          assigneeId: "u1",
-          assigneeName: "John Doe",
-          createdAt: "2023-05-15T10:00:00Z",
-        },
-        {
-          _id: "2",
-          title: "Implement authentication",
-          description: "Set up JWT authentication with refresh tokens",
-          status: "done",
-          priority: "high",
-          projectId: "p1",
-          projectName: "Website Redesign",
-          sprintId: "s1",
-          sprintName: "Sprint 1: Initial Setup",
-          assigneeId: "u1",
-          assigneeName: "John Doe",
-          createdAt: "2023-05-16T10:00:00Z",
-        },
-        {
-          _id: "3",
-          title: "Create dashboard layout",
-          description:
-            "Design and implement the main dashboard layout with sidebar",
-          status: "in_progress",
-          priority: "medium",
-          projectId: "p1",
-          projectName: "Website Redesign",
-          sprintId: "s2",
-          sprintName: "Sprint 2: Core Features",
-          assigneeId: "u2",
-          assigneeName: "Jane Smith",
-          createdAt: "2023-05-20T10:00:00Z",
-        },
-        {
-          _id: "4",
-          title: "Implement project creation",
-          description: "Create form and API for adding new projects",
-          status: "todo",
-          priority: "medium",
-          projectId: "p1",
-          projectName: "Website Redesign",
-          sprintId: "s2",
-          sprintName: "Sprint 2: Core Features",
-          createdAt: "2023-05-22T10:00:00Z",
-        },
-        {
-          _id: "5",
-          title: "Design mobile wireframes",
-          description: "Create wireframes for mobile app screens",
-          status: "todo",
-          priority: "low",
-          projectId: "p2",
-          projectName: "Mobile App",
-          sprintId: "s3",
-          sprintName: "Sprint 1: Planning",
-          createdAt: "2023-06-01T10:00:00Z",
-        },
-      ];
+      console.log("Response:", response);
+      const { data, errors } = await response.json();
 
-      setTasks(mockTasks);
+      if (errors) {
+        throw new Error(errors[0].message);
+      }
+
+      console.log("Ticket data:", data.ticketsWithDetails);
+
+      // Convert API response into correct structure
+      let formattedTasks = data.ticketsWithDetails.map(
+        (ticket: TicketResponse) => ({
+          _id: ticket._id,
+          title: ticket.title,
+          description: ticket.description,
+          status: ticket.status, // Keep original status (uppercase)
+          priority: ticket.priority, // Keep original priority (uppercase)
+          projectId: ticket.project?._id || "",
+          projectName: ticket.project?.name || "Unknown Project",
+          sprintId: ticket.sprint?._id || "",
+          sprintName: ticket.sprint?.name || "Unknown Sprint",
+          assigneeId: ticket.assignee?._id || "",
+          assigneeName: ticket.assignee?.name || "Unassigned",
+          createdAt: ticket.createdAt,
+        })
+      );
+
+      // Apply filter before updating state
+      if (filter !== "ALL") {
+        formattedTasks = formattedTasks.filter(
+          (task: Task) => task.status === filter
+        );
+      }
+
+      setTasks(formattedTasks);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
       setError("Failed to fetch tasks");
@@ -119,18 +135,17 @@ export default function TasksPage() {
     }
   };
 
-  const getFilteredTasks = () => {
-    if (filter === "all") return tasks;
-    return tasks.filter((task) => task.status === filter);
-  };
+  const getFilteredTasks = () => tasks;
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case "todo":
+      case "TODO":
         return "bg-gray-100 text-gray-800";
-      case "in_progress":
+      case "IN_PROGRESS":
         return "bg-blue-100 text-blue-800";
-      case "done":
+      case "IN_REVIEW":
+        return "bg-purple-100 text-purple-800";
+      case "RESOLVED":
         return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -139,12 +154,14 @@ export default function TasksPage() {
 
   const getPriorityBadgeClass = (priority: string) => {
     switch (priority) {
-      case "low":
+      case "LOW":
         return "bg-gray-100 text-gray-800";
-      case "medium":
+      case "MEDIUM":
         return "bg-yellow-100 text-yellow-800";
-      case "high":
+      case "HIGH":
         return "bg-red-100 text-red-800";
+      case "URGENT":
+        return "bg-red-500 text-white";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -172,9 +189,9 @@ export default function TasksPage() {
         <div className='bg-white p-4 rounded-lg shadow-md'>
           <div className='flex flex-wrap gap-2'>
             <button
-              onClick={() => setFilter("all")}
+              onClick={() => setFilter("ALL")}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "all"
+                filter === "ALL"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-800"
               }`}
@@ -182,9 +199,9 @@ export default function TasksPage() {
               All Tasks
             </button>
             <button
-              onClick={() => setFilter("todo")}
+              onClick={() => setFilter("TODO")}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "todo"
+                filter === "TODO"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-800"
               }`}
@@ -192,9 +209,9 @@ export default function TasksPage() {
               To Do
             </button>
             <button
-              onClick={() => setFilter("in_progress")}
+              onClick={() => setFilter("IN_PROGRESS")}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "in_progress"
+                filter === "IN_PROGRESS"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-800"
               }`}
@@ -202,14 +219,24 @@ export default function TasksPage() {
               In Progress
             </button>
             <button
-              onClick={() => setFilter("done")}
+              onClick={() => setFilter("IN_REVIEW")}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === "done"
+                filter === "IN_REVIEW"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-800"
               }`}
             >
-              Done
+              In Review
+            </button>
+            <button
+              onClick={() => setFilter("RESOLVED")}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                filter === "RESOLVED"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+              }`}
+            >
+              Resolved
             </button>
           </div>
         </div>
@@ -228,7 +255,7 @@ export default function TasksPage() {
                 </p>
               </div>
             ) : (
-              getFilteredTasks().map((task) => (
+              getFilteredTasks().map((task: Task) => (
                 <div
                   key={task._id}
                   className='bg-white p-4 rounded-lg shadow-md'
@@ -237,8 +264,13 @@ export default function TasksPage() {
                     <div>
                       <h3 className='font-medium text-lg'>{task.title}</h3>
                       <p className='text-gray-500 text-sm'>
-                        {task.projectName}
+                        Project: {task.projectName}
                       </p>
+                      {task.sprintName && (
+                        <p className='text-gray-500 text-sm'>
+                          Sprint: {task.sprintName}
+                        </p>
+                      )}
                     </div>
                     <div className='flex space-x-2'>
                       <span
@@ -246,14 +278,14 @@ export default function TasksPage() {
                           task.status
                         )}`}
                       >
-                        {task.status.replace("_", " ").toUpperCase()}
+                        {task.status.replace("_", " ")}
                       </span>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${getPriorityBadgeClass(
                           task.priority
                         )}`}
                       >
-                        {task.priority.toUpperCase()}
+                        {task.priority}
                       </span>
                     </div>
                   </div>
@@ -264,10 +296,8 @@ export default function TasksPage() {
 
                   <div className='mt-4 flex flex-wrap justify-between text-sm text-gray-500'>
                     <div className='space-y-1'>
-                      {task.sprintName && <p>Sprint: {task.sprintName}</p>}
-                      {task.assigneeName && (
-                        <p>Assignee: {task.assigneeName}</p>
-                      )}
+                      <p>Assignee: {task.assigneeName}</p>
+                      <p className='text-xs italic'>Assign in ticket details</p>
                     </div>
                     <p>Created: {formatDate(task.createdAt)}</p>
                   </div>

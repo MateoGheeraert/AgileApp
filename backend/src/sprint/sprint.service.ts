@@ -46,4 +46,24 @@ export class SprintService {
     const result = await this.sprintModel.deleteOne({ _id: id });
     return result.deletedCount === 1;
   }
+
+  async countActiveSprints(): Promise<number> {
+    const now = new Date();
+    return this.sprintModel
+      .countDocuments({
+        startDate: { $lte: now }, // Start date is before or equal to now
+        endDate: { $gte: now }, // End date is after or equal to now
+      })
+      .exec();
+  }
+
+  async findActiveSprints(): Promise<Sprint[]> {
+    const now = new Date();
+    return this.sprintModel
+      .find({
+        startDate: { $lte: now }, // Sprint has started
+        endDate: { $gte: now }, // Sprint has not yet ended
+      })
+      .exec();
+  }
 }

@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Field, ObjectType, ID, registerEnumType } from '@nestjs/graphql';
 import { Document, Schema as MongooseSchema } from 'mongoose';
+import { User } from 'src/auth/models/user.model';
+import { Project } from 'src/project/models/project.model';
+import { Sprint } from 'src/sprint/models/sprint.model';
 
 export enum TicketStatus {
   TODO = 'TODO',
@@ -50,13 +53,22 @@ export class Ticket extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Sprint', required: true })
   sprintId: string;
 
+  @Field(() => Sprint, { nullable: true }) // This enables querying sprint details
+  sprint?: Sprint;
+
   @Field(() => ID)
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: true })
   projectId: string;
 
+  @Field(() => Project, { nullable: true }) // This enables querying project details
+  project?: Project;
+
   @Field(() => ID, { nullable: true })
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
   assigneeId?: string;
+
+  @Field(() => User, { nullable: true }) // This enables querying assignee details
+  assignee?: User;
 
   @Field(() => ID)
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import Cookies from "js-cookie";
 
 interface DashboardStats {
   totalProjects: number;
@@ -35,15 +36,33 @@ export default function DashboardPage() {
     // For now, we'll simulate it with mock data
     const fetchDashboardData = async () => {
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        setLoading(true);
 
-        // Mock data
+        const response = await fetch("http://localhost:4000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Cookies.get("token")}`,
+          },
+          body: JSON.stringify({
+            query: `
+              query {
+                totalProjects: projectCount
+                activeSprints: activeSprintCount
+                completedTasks: ticketCountByStatus(status: RESOLVED)
+                pendingTasks: ticketCountByStatus(status: TODO)
+              }
+            `,
+          }),
+        });
+
+        const { data } = await response.json();
+
         setStats({
-          totalProjects: 5,
-          activeSprints: 3,
-          completedTasks: 27,
-          pendingTasks: 14,
+          totalProjects: data.totalProjects,
+          activeSprints: data.activeSprints,
+          completedTasks: data.completedTasks,
+          pendingTasks: data.pendingTasks,
         });
 
         setRecentActivity([

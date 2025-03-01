@@ -25,4 +25,8 @@ export class ProjectService {
     const newProject = new this.projectModel(data);
     return await newProject.save(); // Save to MongoDB
   }
+
+  async count(): Promise<number> {
+    return this.projectModel.countDocuments().exec();
+  }
 }

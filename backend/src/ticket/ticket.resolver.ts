@@ -1,4 +1,12 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ID,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import { UseGuards, UnauthorizedException } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { Ticket, TicketStatus } from './models/ticket.model';
@@ -6,6 +14,9 @@ import { CreateTicketInput } from './dto/create-ticket.input';
 import { UpdateTicketInput } from './dto/update-ticket.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Sprint } from 'src/sprint/models/sprint.model';
+import { Project } from 'src/project/models/project.model';
+import { User } from 'src/auth/models/user.model';
 
 @Resolver(() => Ticket)
 @UseGuards(JwtAuthGuard)
@@ -41,6 +52,26 @@ export class TicketResolver {
   @Query(() => Ticket)
   async ticket(@Args('id', { type: () => ID }) id: string): Promise<Ticket> {
     return this.ticketService.findOne(id);
+  }
+
+  @Query(() => [Ticket])
+  async ticketsWithDetails(): Promise<Ticket[]> {
+    return await this.ticketService.findAllWithDetails();
+  }
+
+  @ResolveField(() => Project, { nullable: true })
+  project(@Parent() ticket: Ticket) {
+    return ticket.projectId;
+  }
+
+  @ResolveField(() => Sprint, { nullable: true })
+  sprint(@Parent() ticket: Ticket) {
+    return ticket.sprintId;
+  }
+
+  @ResolveField(() => User, { nullable: true })
+  assignee(@Parent() ticket: Ticket) {
+    return ticket.assigneeId;
   }
 
   @Mutation(() => Ticket)
@@ -87,5 +118,12 @@ export class TicketResolver {
     @Args('id', { type: () => ID }) id: string,
   ): Promise<boolean> {
     return this.ticketService.remove(id);
+  }
+
+  @Query(() => Number)
+  async ticketCountByStatus(
+    @Args('status', { type: () => TicketStatus }) status: TicketStatus,
+  ): Promise<number> {
+    return await this.ticketService.countByStatus(status);
   }
 }

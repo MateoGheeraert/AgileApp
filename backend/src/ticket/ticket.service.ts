@@ -99,4 +99,17 @@ export class TicketService {
     const result = await this.ticketModel.deleteOne({ _id: id });
     return result.deletedCount === 1;
   }
+
+  async countByStatus(status: TicketStatus): Promise<number> {
+    return this.ticketModel.countDocuments({ status }).exec();
+  }
+
+  async findAllWithDetails(): Promise<Ticket[]> {
+    return this.ticketModel
+      .find()
+      .populate('projectId') // Fetch full project data
+      .populate('sprintId') // Fetch full sprint data
+      .populate('assigneeId') // Fetch full assignee data
+      .exec();
+  }
 }

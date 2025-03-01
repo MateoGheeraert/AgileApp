@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
+import Cookies from "js-cookie";
 import {
   format,
   startOfMonth,
@@ -31,50 +32,49 @@ export default function CalendarPage() {
   useEffect(() => {
     const fetchSprints = async () => {
       try {
-        // In a real app, you would fetch this from your API
-        // For now, we'll use mock data
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        setLoading(true);
+        const response = await fetch(
+          process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
+            "http://localhost:4000/graphql",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Cookies.get("token")}`,
+            },
+            body: JSON.stringify({
+              query: `
+              query {
+                activeSprints {
+                  _id
+                  name
+                  startDate
+                  endDate
+                  project {
+                    name
+                  }
+                }
+              }
+            `,
+            }),
+          }
+        );
 
-        // Mock data - in a real app, this would come from your API
-        const mockSprints: Sprint[] = [
-          {
-            _id: "1",
-            name: "Sprint 1: Initial Setup",
-            startDate: "2023-06-01",
-            endDate: "2023-06-14",
-            projectId: "p1",
-            projectName: "Website Redesign",
-          },
-          {
-            _id: "2",
-            name: "Sprint 2: Core Features",
-            startDate: "2023-06-15",
-            endDate: "2023-06-28",
-            projectId: "p1",
-            projectName: "Website Redesign",
-          },
-          {
-            _id: "3",
-            name: "Sprint 1: Planning",
-            startDate: "2023-06-10",
-            endDate: "2023-06-24",
-            projectId: "p2",
-            projectName: "Mobile App",
-          },
-          {
-            _id: "4",
-            name: "Current Sprint",
-            startDate: format(new Date(), "yyyy-MM-dd"),
-            endDate: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
-            projectId: "p3",
-            projectName: "Current Project",
-          },
-        ];
+        const { data, errors } = await response.json();
+        if (errors) throw new Error(errors[0].message);
 
-        setSprints(mockSprints);
+        setSprints(
+          data.activeSprints.map((sprint: any) => ({
+            _id: sprint._id,
+            name: sprint.name,
+            startDate: sprint.startDate,
+            endDate: sprint.endDate,
+            projectName: sprint.project?.name || "Unknown Project",
+          }))
+        );
       } catch (error) {
-        console.error("Failed to fetch sprints:", error);
         setError("Failed to fetch sprints");
+        console.error("Failed to fetch sprints:", error);
       } finally {
         setLoading(false);
       }

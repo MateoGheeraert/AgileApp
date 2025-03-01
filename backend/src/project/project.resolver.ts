@@ -16,6 +16,11 @@ export class ProjectResolver {
     return await this.projectService.findOne(id);
   }
 
+  @Query(() => Number)
+  async projectCount(): Promise<number> {
+    return await this.projectService.count();
+  }
+
   @Mutation(() => Project)
   createProject(
     @Args('name') name: string,

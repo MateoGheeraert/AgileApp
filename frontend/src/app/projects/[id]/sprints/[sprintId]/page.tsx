@@ -24,6 +24,8 @@ interface Ticket {
   description: string;
   status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "RESOLVED";
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  assigneeId?: string;
+  assigneeName?: string;
 }
 
 interface Sprint {
@@ -33,14 +35,14 @@ interface Sprint {
   endDate: string;
 }
 
-const priorityOptions = [
+const priorityOptions: { label: string; value: Ticket["priority"] }[] = [
   { label: "Low", value: "LOW" },
   { label: "Medium", value: "MEDIUM" },
   { label: "High", value: "HIGH" },
   { label: "Urgent", value: "URGENT" },
 ];
 
-const statusOptions = [
+const statusOptions: { label: string; value: Ticket["status"] }[] = [
   { label: "To Do", value: "TODO" },
   { label: "In Progress", value: "IN_PROGRESS" },
   { label: "In Review", value: "IN_REVIEW" },
@@ -54,11 +56,13 @@ export default function SprintDetailPage() {
   const [sprint, setSprint] = useState<Sprint | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-  const [ticketData, setTicketData] = useState({
+  const [ticketData, setTicketData] = useState<Omit<Ticket, "_id">>({
     title: "",
     description: "",
-    status: "TODO",
-    priority: "MEDIUM",
+    status: "TODO" as const,
+    priority: "MEDIUM" as const,
+    assigneeId: "",
+    assigneeName: "",
   });
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export default function SprintDetailPage() {
       fetchSprint();
       fetchTickets();
     }
-  }, [user]);
+  }, []);
 
   async function fetchSprint() {
     try {
@@ -124,6 +128,10 @@ export default function SprintDetailPage() {
                 description
                 status
                 priority
+                assignee {
+                  _id
+                  name
+                }
               }
             }
           `,
@@ -138,12 +146,58 @@ export default function SprintDetailPage() {
         return;
       }
 
-      setTickets(result.data?.ticketsBySprint || []);
+      // Map the tickets with assignee information
+      const mappedTickets =
+        result.data?.ticketsBySprint.map((ticket: any) => ({
+          _id: ticket._id,
+          title: ticket.title,
+          description: ticket.description,
+          status: ticket.status,
+          priority: ticket.priority,
+          assigneeId: ticket.assignee?._id || "",
+          assigneeName: ticket.assignee?.name || "Unassigned",
+        })) || [];
+
+      setTickets(mappedTickets);
     } catch (error) {
       console.error("Failed to fetch tickets:", error);
       setTickets([]);
     }
   }
+
+  // async function fetchProjectUsers() {
+  //   try {
+  //     const response = await fetch("http://localhost:4000/graphql", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${Cookies.get("token")}`,
+  //       },
+  //       body: JSON.stringify({
+  //         query: `
+  //           query {
+  //             users {
+  //               _id
+  //               name
+  //               email
+  //             }
+  //           }
+  //         `,
+  //       }),
+  //     });
+
+  //     const result = await response.json();
+
+  //     if (result.errors) {
+  //       console.error("GraphQL errors:", result.errors);
+  //       return;
+  //     }
+
+  //     setUsers(result.data?.users || []);
+  //   } catch (error) {
+  //     console.error("Failed to fetch users:", error);
+  //   }
+  // }
 
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
@@ -201,6 +255,17 @@ export default function SprintDetailPage() {
       return;
     }
 
+    // Create a copy of ticketData to modify
+    const ticketInput: any = { ...ticketData };
+
+    // Remove assigneeName from the input as it's not expected by the API
+    delete ticketInput.assigneeName;
+
+    // If assigneeId is empty, remove it from the input to make it null in the database
+    if (!ticketInput.assigneeId) {
+      delete ticketInput.assigneeId;
+    }
+
     const mutation = editingTicket
       ? `mutation UpdateTicket($id: ID!, $input: UpdateTicketInput!) {
           updateTicket(id: $id, input: $input) {
@@ -209,6 +274,10 @@ export default function SprintDetailPage() {
             description
             status
             priority
+            assignee {
+              _id
+              name
+            }
           }
         }`
       : `mutation CreateTicket($input: CreateTicketInput!) {
@@ -218,17 +287,21 @@ export default function SprintDetailPage() {
             description
             status
             priority
+            assignee {
+              _id
+              name
+            }
           }
         }`;
 
     const variables = editingTicket
       ? {
           id: editingTicket._id,
-          input: ticketData,
+          input: ticketInput,
         }
       : {
           input: {
-            ...ticketData,
+            ...ticketInput,
             sprintId: params.sprintId,
             projectId: params.id,
           },
@@ -252,13 +325,25 @@ export default function SprintDetailPage() {
       }
 
       if (editingTicket && result.data?.updateTicket) {
+        const updatedTicket = {
+          ...result.data.updateTicket,
+          assigneeId: result.data.updateTicket.assignee?._id || "",
+          assigneeName: result.data.updateTicket.assignee?.name || "Unassigned",
+        };
+
         setTickets(
           tickets.map((ticket) =>
-            ticket._id === editingTicket._id ? result.data.updateTicket : ticket
+            ticket._id === editingTicket._id ? updatedTicket : ticket
           )
         );
       } else if (result.data?.createTicket) {
-        setTickets([...tickets, result.data.createTicket]);
+        const newTicket = {
+          ...result.data.createTicket,
+          assigneeId: result.data.createTicket.assignee?._id || "",
+          assigneeName: result.data.createTicket.assignee?.name || "Unassigned",
+        };
+
+        setTickets([...tickets, newTicket]);
       }
 
       setIsModalOpen(false);
@@ -266,8 +351,10 @@ export default function SprintDetailPage() {
       setTicketData({
         title: "",
         description: "",
-        status: "TODO",
-        priority: "MEDIUM",
+        status: "TODO" as const,
+        priority: "MEDIUM" as const,
+        assigneeId: "",
+        assigneeName: "",
       });
     } catch (error) {
       console.error("Error creating/updating ticket:", error);
@@ -336,8 +423,10 @@ export default function SprintDetailPage() {
               setTicketData({
                 title: "",
                 description: "",
-                status: "TODO",
-                priority: "MEDIUM",
+                status: "TODO" as const,
+                priority: "MEDIUM" as const,
+                assigneeId: "",
+                assigneeName: "",
               });
             }}
           >
@@ -384,6 +473,9 @@ export default function SprintDetailPage() {
                                         description: ticket.description,
                                         status: ticket.status,
                                         priority: ticket.priority,
+                                        assigneeId: ticket.assigneeId || "",
+                                        assigneeName:
+                                          ticket.assigneeName || "Unassigned",
                                       });
                                       setIsModalOpen(true);
                                     }}
@@ -443,8 +535,10 @@ export default function SprintDetailPage() {
               setTicketData({
                 title: "",
                 description: "",
-                status: "TODO",
-                priority: "MEDIUM",
+                status: "TODO" as const,
+                priority: "MEDIUM" as const,
+                assigneeId: "",
+                assigneeName: "",
               });
             }}
           >
@@ -482,7 +576,7 @@ export default function SprintDetailPage() {
                 />
               </div>
 
-              <SelectField
+              <SelectField<Ticket["priority"]>
                 label='Priority'
                 value={ticketData.priority}
                 onChange={(newValue) =>
@@ -491,8 +585,31 @@ export default function SprintDetailPage() {
                 options={priorityOptions}
               />
 
+              <div className='mb-4'>
+                <label
+                  htmlFor='assignee'
+                  className='block text-sm font-medium text-gray-700'
+                >
+                  Assignee (Optional)
+                </label>
+                <select
+                  id='assignee'
+                  name='assignee'
+                  className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+                  value={ticketData.assigneeId || ""}
+                  onChange={(e) =>
+                    setTicketData({
+                      ...ticketData,
+                      assigneeId: e.target.value || "",
+                    })
+                  }
+                >
+                  <option value=''>Unassigned</option>
+                </select>
+              </div>
+
               {editingTicket && (
-                <SelectField
+                <SelectField<Ticket["status"]>
                   label='Status'
                   value={ticketData.status}
                   onChange={(newValue) =>
@@ -511,8 +628,10 @@ export default function SprintDetailPage() {
                     setTicketData({
                       title: "",
                       description: "",
-                      status: "TODO",
-                      priority: "MEDIUM",
+                      status: "TODO" as const,
+                      priority: "MEDIUM" as const,
+                      assigneeId: "",
+                      assigneeName: "",
                     });
                   }}
                 >

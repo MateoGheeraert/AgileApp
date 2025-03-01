@@ -34,6 +34,7 @@ type Sprint {
   projectId: ID!
   description: String
   createdAt: DateTime!
+  project: Project!
 }
 
 type Ticket {
@@ -43,8 +44,11 @@ type Ticket {
   status: TicketStatus!
   priority: TicketPriority!
   sprintId: ID!
+  sprint: Sprint
   projectId: ID!
+  project: Project
   assigneeId: ID
+  assignee: User
   creatorId: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -68,14 +72,19 @@ type Query {
   hello: String!
   projects: [Project!]!
   project(id: ID!): Project!
+  projectCount: Float!
   sprints: [Sprint!]!
   sprintsByProject(projectId: ID!): [Sprint!]!
   sprint(id: ID!): Sprint!
+  activeSprintCount: Float!
+  activeSprints: [Sprint!]!
   tickets: [Ticket!]!
   ticketsByProject(projectId: ID!): [Ticket!]!
   ticketsBySprint(sprintId: ID!): [Ticket!]!
   ticketsByAssignee(assigneeId: ID!): [Ticket!]!
   ticket(id: ID!): Ticket!
+  ticketsWithDetails: [Ticket!]!
+  ticketCountByStatus(status: TicketStatus!): Float!
 }
 
 type Mutation {

@@ -1,15 +1,27 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ID,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import { SprintService } from './sprint.service';
 import { Sprint } from './models/sprint.model';
 import { CreateSprintInput } from './dto/create-sprint.input';
 import { UpdateSprintInput } from './dto/update-sprint.input';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-
+import { Project } from 'src/project/models/project.model';
+import { ProjectService } from 'src/project/project.service';
 @Resolver(() => Sprint)
 @UseGuards(JwtAuthGuard)
 export class SprintResolver {
-  constructor(private readonly sprintService: SprintService) {}
+  constructor(
+    private readonly sprintService: SprintService,
+    private readonly projectService: ProjectService, // Inject ProjectService
+  ) {}
 
   @Query(() => [Sprint])
   async sprints(): Promise<Sprint[]> {
@@ -26,6 +38,21 @@ export class SprintResolver {
   @Query(() => Sprint)
   async sprint(@Args('id', { type: () => ID }) id: string): Promise<Sprint> {
     return this.sprintService.findOne(id);
+  }
+
+  @Query(() => Number)
+  async activeSprintCount(): Promise<number> {
+    return await this.sprintService.countActiveSprints();
+  }
+
+  @Query(() => [Sprint])
+  async activeSprints(): Promise<Sprint[]> {
+    return this.sprintService.findActiveSprints();
+  }
+
+  @ResolveField(() => Project)
+  async project(@Parent() sprint: Sprint): Promise<Project> {
+    return await this.projectService.findOne(sprint.projectId); // Fetch the project
   }
 
   @Mutation(() => Sprint)
