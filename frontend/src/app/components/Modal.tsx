@@ -24,16 +24,6 @@ const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => {
 
         {/* Modal Content */}
         <div>{children}</div>
-
-        {/* Modal Footer */}
-        <div className='mt-4 flex justify-end space-x-3'>
-          <button
-            onClick={onClose}
-            className='px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition'
-          >
-            Close
-          </button>
-        </div>
       </div>
     </div>
   );

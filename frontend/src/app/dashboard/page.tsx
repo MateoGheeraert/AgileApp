@@ -1,197 +1,257 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import AuthLayout from "../components/AuthLayout";
 import Link from "next/link";
-import Button from "../components/Button";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Project {
+interface DashboardStats {
+  totalProjects: number;
+  activeSprints: number;
+  completedTasks: number;
+  pendingTasks: number;
+}
+
+interface RecentActivity {
   _id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
+  type: string;
+  description: string;
+  date: string;
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectDescription, setNewProjectDescription] = useState("");
-  const [error, setError] = useState("");
+  const [stats, setStats] = useState<DashboardStats>({
+    totalProjects: 0,
+    activeSprints: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
+  });
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProjects();
+    // In a real app, you would fetch this data from your API
+    // For now, we'll simulate it with mock data
+    const fetchDashboardData = async () => {
+      try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Mock data
+        setStats({
+          totalProjects: 5,
+          activeSprints: 3,
+          completedTasks: 27,
+          pendingTasks: 14,
+        });
+
+        setRecentActivity([
+          {
+            _id: "1",
+            type: "task",
+            description: 'Task "Fix login bug" was completed',
+            date: new Date(Date.now() - 3600000).toISOString(),
+          },
+          {
+            _id: "2",
+            type: "sprint",
+            description: 'Sprint "UI Improvements" was started',
+            date: new Date(Date.now() - 86400000).toISOString(),
+          },
+          {
+            _id: "3",
+            type: "project",
+            description: 'New project "Mobile App" was created',
+            date: new Date(Date.now() - 172800000).toISOString(),
+          },
+          {
+            _id: "4",
+            type: "task",
+            description: 'Task "Update documentation" was assigned to you',
+            date: new Date(Date.now() - 259200000).toISOString(),
+          },
+        ]);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch("http://localhost:4000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          query: `
-            query {
-              projects {
-                _id
-                name
-                description
-                createdAt
-              }
-            }
-          `,
-        }),
-      });
-
-      const { data } = await response.json();
-      if (data?.projects) {
-        setProjects(data.projects);
-      }
-    } catch (error) {
-      console.error("Failed to fetch projects:", error);
-      setError("Failed to fetch projects");
-    }
-  };
-
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch("http://localhost:4000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation CreateProject($name: String!, $description: String) {
-              createProject(name: $name, description: $description) {
-                _id
-                name
-                description
-                createdAt
-              }
-            }
-          `,
-          variables: {
-            name: newProjectName,
-            description: newProjectDescription || null,
-          },
-        }),
-      });
-
-      const { data } = await response.json();
-      if (data?.createProject) {
-        setProjects([...projects, data.createProject]);
-        setIsCreating(false);
-        setNewProjectName("");
-        setNewProjectDescription("");
-      }
-    } catch (error) {
-      console.error("Failed to create project:", error);
-      setError("Failed to create project");
-    }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Navbar */}
-      <nav className='bg-white shadow-sm'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between h-16 items-center'>
-            <h1 className='text-xl text-black font-semibold'>Projects</h1>
-            <div className='flex items-center'>
-              <span className='text-black mr-4'>Welcome, {user?.name}</span>
-              <Button onClick={() => setIsCreating(true)}>New Project</Button>
-            </div>
-          </div>
+    <AuthLayout>
+      <div className='space-y-6'>
+        {/* Welcome Section */}
+        <div className='bg-white p-6 rounded-lg shadow-md'>
+          <h1 className='text-2xl font-bold text-gray-800'>
+            Welcome back, {user?.name}!
+          </h1>
+          <p className='text-gray-600 mt-2'>
+            Here&apos;s what&apos;s happening with your projects today.
+          </p>
         </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className='max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'>
-        {error && <div className='mb-4 text-red-500 text-center'>{error}</div>}
-
-        {/* Create Project Form */}
-        {isCreating && (
-          <div className='mb-8 bg-white shadow sm:rounded-lg p-6'>
-            <h2 className='text-lg font-medium mb-4'>Create New Project</h2>
-            <form onSubmit={handleCreateProject}>
-              <div className='space-y-4'>
-                <div>
-                  <label
-                    htmlFor='name'
-                    className='block text-sm font-medium text-gray-700'
-                  >
-                    Project Name
-                  </label>
-                  <input
-                    type='text'
-                    id='name'
-                    required
-                    className='mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2'
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor='description'
-                    className='block text-sm font-medium text-gray-700'
-                  >
-                    Description (optional)
-                  </label>
-                  <textarea
-                    id='description'
-                    className='mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2'
-                    value={newProjectDescription}
-                    onChange={(e) => setNewProjectDescription(e.target.value)}
-                  />
-                </div>
-                <div className='flex justify-end space-x-3'>
-                  <Button
-                    variant='outline'
-                    onClick={() => setIsCreating(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type='submit'>Create Project</Button>
-                </div>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Projects Grid */}
-        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-          {projects.map((project) => (
+        {/* Stats Cards */}
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+          <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500'>
+            <h2 className='text-gray-500 text-sm font-medium uppercase'>
+              Projects
+            </h2>
+            <p className='mt-2 text-3xl font-bold text-gray-800'>
+              {stats.totalProjects}
+            </p>
             <Link
-              key={project._id}
-              href={`/projects/${project._id}`}
-              className='block'
+              href='/projects'
+              className='mt-2 text-blue-500 text-sm hover:underline block'
             >
-              <div className='bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow'>
-                <div className='px-4 py-5 sm:p-6'>
-                  <h3 className='text-lg font-medium text-gray-900 truncate'>
-                    {project.name}
-                  </h3>
-                  {project.description && (
-                    <p className='mt-1 text-sm text-gray-600 line-clamp-2'>
-                      {project.description}
-                    </p>
-                  )}
-                  <p className='mt-2 text-xs text-gray-500'>
-                    Created {new Date(project.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
+              View all projects →
             </Link>
-          ))}
+          </div>
+
+          <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500'>
+            <h2 className='text-gray-500 text-sm font-medium uppercase'>
+              Active Sprints
+            </h2>
+            <p className='mt-2 text-3xl font-bold text-gray-800'>
+              {stats.activeSprints}
+            </p>
+            <Link
+              href='/calendar'
+              className='mt-2 text-green-500 text-sm hover:underline block'
+            >
+              View calendar →
+            </Link>
+          </div>
+
+          <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500'>
+            <h2 className='text-gray-500 text-sm font-medium uppercase'>
+              Completed Tasks
+            </h2>
+            <p className='mt-2 text-3xl font-bold text-gray-800'>
+              {stats.completedTasks}
+            </p>
+            <Link
+              href='/tasks'
+              className='mt-2 text-purple-500 text-sm hover:underline block'
+            >
+              View tasks →
+            </Link>
+          </div>
+
+          <div className='bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500'>
+            <h2 className='text-gray-500 text-sm font-medium uppercase'>
+              Pending Tasks
+            </h2>
+            <p className='mt-2 text-3xl font-bold text-gray-800'>
+              {stats.pendingTasks}
+            </p>
+            <Link
+              href='/tasks'
+              className='mt-2 text-yellow-500 text-sm hover:underline block'
+            >
+              View tasks →
+            </Link>
+          </div>
         </div>
-      </main>
-    </div>
+
+        {/* Recent Activity */}
+        <div className='bg-white p-6 rounded-lg shadow-md'>
+          <h2 className='text-xl font-bold text-gray-800 mb-4'>
+            Recent Activity
+          </h2>
+
+          {loading ? (
+            <div className='flex justify-center py-4'>
+              <div className='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500'></div>
+            </div>
+          ) : (
+            <div className='space-y-4'>
+              {recentActivity.map((activity) => (
+                <div
+                  key={activity._id}
+                  className='flex items-start border-b border-gray-100 pb-4'
+                >
+                  <div
+                    className={`
+                    flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center mr-3
+                    ${
+                      activity.type === "task"
+                        ? "bg-purple-100 text-purple-500"
+                        : activity.type === "sprint"
+                        ? "bg-green-100 text-green-500"
+                        : "bg-blue-100 text-blue-500"
+                    }
+                  `}
+                  >
+                    {activity.type === "task"
+                      ? "✓"
+                      : activity.type === "sprint"
+                      ? "🏃"
+                      : "📁"}
+                  </div>
+                  <div className='flex-1'>
+                    <p className='text-gray-800'>{activity.description}</p>
+                    <p className='text-gray-500 text-sm'>
+                      {formatDate(activity.date)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Links */}
+        <div className='bg-white p-6 rounded-lg shadow-md'>
+          <h2 className='text-xl font-bold text-gray-800 mb-4'>
+            Quick Actions
+          </h2>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+            <Link
+              href='/projects'
+              className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
+            >
+              <div className='text-2xl mb-2'>📁</div>
+              <p className='text-gray-800 font-medium'>New Project</p>
+            </Link>
+            <Link
+              href='/tasks'
+              className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
+            >
+              <div className='text-2xl mb-2'>✓</div>
+              <p className='text-gray-800 font-medium'>Add Task</p>
+            </Link>
+            <Link
+              href='/calendar'
+              className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
+            >
+              <div className='text-2xl mb-2'>🏃</div>
+              <p className='text-gray-800 font-medium'>Start Sprint</p>
+            </Link>
+            <Link
+              href='/profile'
+              className='bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-colors'
+            >
+              <div className='text-2xl mb-2'>👤</div>
+              <p className='text-gray-800 font-medium'>Edit Profile</p>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </AuthLayout>
   );
 }

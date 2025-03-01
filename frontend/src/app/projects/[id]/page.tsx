@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
 import Button from "@/app/components/Button";
+import AuthLayout from "@/app/components/AuthLayout";
 
 interface Project {
   _id: string;
@@ -56,44 +57,46 @@ export default function ProjectPage() {
   }, [fetchProject]);
 
   if (!project) {
-    return <div className='p-4'>Loading...</div>;
+    return (
+      <AuthLayout>
+        <div className='p-4'>Loading...</div>
+      </AuthLayout>
+    );
   }
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Navbar */}
-      <nav className='bg-white shadow-sm'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between h-16 items-center'>
-            <Link
-              href='/dashboard'
-              className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
+    <AuthLayout>
+      <div>
+        <div className='mb-6'>
+          <Link
+            href='/dashboard'
+            className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
+          >
+            ← Back to Projects
+          </Link>
+        </div>
+
+        <div className='bg-white shadow-lg rounded-lg p-6'>
+          {error && (
+            <div className='mb-4 text-red-500 text-center'>{error}</div>
+          )}
+
+          <h1 className='text-3xl font-bold text-black'>{project.name}</h1>
+          {project.description && (
+            <p className='mt-2 text-gray-600 text-lg'>{project.description}</p>
+          )}
+
+          <div className='mt-6 flex justify-center'>
+            <Button
+              as='a'
+              href={`/projects/${params.id}/sprints`}
+              className='w-full max-w-xs'
             >
-              ← Back to Projects
-            </Link>
+              View Sprints
+            </Button>
           </div>
         </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className='max-w-4xl mx-auto py-10 sm:px-6 lg:px-8 bg-white shadow-lg rounded-lg p-6'>
-        {error && <div className='mb-4 text-red-500 text-center'>{error}</div>}
-
-        <h1 className='text-3xl font-bold text-black'>{project.name}</h1>
-        {project.description && (
-          <p className='mt-2 text-gray-600 text-lg'>{project.description}</p>
-        )}
-
-        <div className='mt-6 flex justify-center'>
-          <Button
-            as='a'
-            href={`/projects/${params.id}/sprints`}
-            className='w-full max-w-xs'
-          >
-            View Sprints
-          </Button>
-        </div>
-      </main>
-    </div>
+      </div>
+    </AuthLayout>
   );
 }

@@ -1,25 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import Button from "../components/Button";
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const { login } = useAuth();
+  const [localError, setLocalError] = useState("");
+  const { login, user, isLoading, error: authError } = useAuth();
+  const router = useRouter();
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user && !isLoading) {
+      router.push("/dashboard");
+    }
+  }, [user, isLoading, router]);
+
+  // Display auth context errors in the UI
+  useEffect(() => {
+    if (authError) {
+      setLocalError(authError);
+    }
+  }, [authError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setLocalError("");
+
+    // Simple validation
+    if (!email || !password) {
+      setLocalError("Email and password are required");
+      return;
+    }
+
     try {
       await login(email, password);
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid email or password");
+      // Error will be set by auth context and displayed via useEffect
     }
   };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-gray-200'>
+        <div className='text-center'>
+          <p className='text-lg'>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen flex items-center justify-center bg-gray-200'>
@@ -28,10 +63,9 @@ export default function LoginPage() {
           Sign in to your account
         </h2>
         <form className='mt-6 space-y-4' onSubmit={handleSubmit}>
-          {error && (
-            <div className='text-red-500 text-sm text-center'>{error}</div>
+          {localError && (
+            <div className='text-red-500 text-sm text-center'>{localError}</div>
           )}
-
           <div className='space-y-3'>
             <div>
               <label
@@ -70,14 +104,16 @@ export default function LoginPage() {
               />
             </div>
           </div>
-
           {/* Centered Sign In Button */}
           <div className='flex justify-center'>
-            <Button type='submit' className='w-full max-w-xs'>
-              Sign in
+            <Button
+              type='submit'
+              className='w-full max-w-xs'
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </div>
-
           <div className='text-sm text-center mt-4'>
             <Link
               href='/register'

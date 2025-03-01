@@ -14,6 +14,9 @@ import Button from "@/app/components/Button";
 import Modal from "@/app/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import AuthLayout from "@/app/components/AuthLayout";
+import SelectField from "@/app/components/SelectField";
+import { Trash } from "lucide-react";
 
 interface Ticket {
   _id: string;
@@ -29,6 +32,20 @@ interface Sprint {
   startDate: string;
   endDate: string;
 }
+
+const priorityOptions = [
+  { label: "Low", value: "LOW" },
+  { label: "Medium", value: "MEDIUM" },
+  { label: "High", value: "HIGH" },
+  { label: "Urgent", value: "URGENT" },
+];
+
+const statusOptions = [
+  { label: "To Do", value: "TODO" },
+  { label: "In Progress", value: "IN_PROGRESS" },
+  { label: "In Review", value: "IN_REVIEW" },
+  { label: "Resolved", value: "RESOLVED" },
+];
 
 export default function SprintDetailPage() {
   const { user } = useAuth();
@@ -83,6 +100,7 @@ export default function SprintDetailPage() {
 
       if (result.data?.sprint) {
         setSprint(result.data.sprint);
+        console.log(sprint);
       }
     } catch (error) {
       console.error("Failed to fetch sprint:", error);
@@ -299,239 +317,215 @@ export default function SprintDetailPage() {
   ];
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Navbar */}
-      <nav className='bg-white shadow-sm'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between h-16 items-center'>
+    <AuthLayout>
+      <div className='min-h-screen bg-gray-100'>
+        {/* Navbar */}
+        <div className='flex justify-between items-center mb-6'>
+          <div className='mb-6'>
             <Link
               href={`/projects/${params.id}/sprints`}
               className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
             >
-              ← Back to Sprints
+              ← Back to Projects
             </Link>
-            <h1 className='text-xl font-semibold'>
-              {sprint ? sprint.name : "Sprint Details"}
-            </h1>
-            <Button
-              onClick={() => {
-                setIsModalOpen(true);
-                setEditingTicket(null);
-                setTicketData({
-                  title: "",
-                  description: "",
-                  status: "TODO",
-                  priority: "MEDIUM",
-                });
-              }}
-            >
-              New Ticket
-            </Button>
           </div>
+          <Button
+            onClick={() => {
+              setIsModalOpen(true);
+              setEditingTicket(null);
+              setTicketData({
+                title: "",
+                description: "",
+                status: "TODO",
+                priority: "MEDIUM",
+              });
+            }}
+          >
+            New Ticket
+          </Button>
         </div>
-      </nav>
 
-      {/* Kanban Board */}
-      <main className='max-w-7xl mx-auto py-10 sm:px-6 lg:px-8'>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className='grid grid-cols-4 gap-6'>
-            {ticketStatusColumns.map(({ id, label }) => (
-              <Droppable key={id} droppableId={id}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className='bg-white p-4 rounded-lg shadow-lg'
-                  >
-                    <h2 className='text-lg font-bold text-black mb-3'>
-                      {label}
-                    </h2>
-                    {tickets
-                      .filter((ticket) => ticket.status === id)
-                      .map((ticket, index) => (
-                        <Draggable
-                          key={ticket._id}
-                          draggableId={ticket._id}
-                          index={index}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className='p-4 mb-3 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer'
-                            >
-                              <div className='flex justify-between items-start'>
-                                <div
-                                  onClick={() => {
-                                    setEditingTicket(ticket);
-                                    setTicketData({
-                                      title: ticket.title,
-                                      description: ticket.description,
-                                      status: ticket.status,
-                                      priority: ticket.priority,
-                                    });
-                                    setIsModalOpen(true);
-                                  }}
-                                >
-                                  <h3 className='font-semibold text-primaryBlue-500'>
-                                    {ticket.title}
-                                  </h3>
-                                  <p className='text-sm text-gray-600 line-clamp-2'>
-                                    {ticket.description}
-                                  </p>
+        {/* Kanban Board */}
+        <main className='max-w-7xl mx-auto py-10 sm:px-6 lg:px-8'>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className='grid grid-cols-4 gap-6'>
+              {ticketStatusColumns.map(({ id, label }) => (
+                <Droppable key={id} droppableId={id}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className='bg-white p-4 rounded-lg shadow-lg'
+                    >
+                      <h2 className='text-lg font-bold text-black mb-3'>
+                        {label}
+                      </h2>
+                      {tickets
+                        .filter((ticket) => ticket.status === id)
+                        .map((ticket, index) => (
+                          <Draggable
+                            key={ticket._id}
+                            draggableId={ticket._id}
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className='p-4 mb-3 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer'
+                              >
+                                <div className='flex justify-between items-start'>
+                                  <div
+                                    onClick={() => {
+                                      setEditingTicket(ticket);
+                                      setTicketData({
+                                        title: ticket.title,
+                                        description: ticket.description,
+                                        status: ticket.status,
+                                        priority: ticket.priority,
+                                      });
+                                      setIsModalOpen(true);
+                                    }}
+                                  >
+                                    <h3 className='font-semibold text-primaryBlue-500'>
+                                      {ticket.title}
+                                    </h3>
+                                    <p className='text-sm text-gray-600 line-clamp-2'>
+                                      {ticket.description}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant='danger'
+                                    className='px-2 py-1 text-xs'
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTicket(ticket._id);
+                                    }}
+                                  >
+                                    <Trash className='w-4 h-4' />
+                                  </Button>
                                 </div>
-                                <Button
-                                  variant='danger'
-                                  className='px-2 py-1 text-xs'
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTicket(ticket._id);
-                                  }}
-                                >
-                                  Delete
-                                </Button>
+                                <div className='mt-2 flex justify-between items-center'>
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded ${
+                                      ticket.priority === "HIGH" ||
+                                      ticket.priority === "URGENT"
+                                        ? "bg-red-100 text-red-800"
+                                        : ticket.priority === "MEDIUM"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-green-100 text-green-800"
+                                    }`}
+                                  >
+                                    {ticket.priority}
+                                  </span>
+                                </div>
                               </div>
-                              <div className='mt-2 flex justify-between items-center'>
-                                <span
-                                  className={`text-xs px-2 py-1 rounded ${
-                                    ticket.priority === "HIGH" ||
-                                    ticket.priority === "URGENT"
-                                      ? "bg-red-100 text-red-800"
-                                      : ticket.priority === "MEDIUM"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-green-100 text-green-800"
-                                  }`}
-                                >
-                                  {ticket.priority}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            ))}
-          </div>
-        </DragDropContext>
-      </main>
-
-      {/* Modal for Creating/Editing Tickets */}
-      {isModalOpen && (
-        <Modal
-          title={editingTicket ? "Edit Ticket" : "New Ticket"}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingTicket(null);
-            setTicketData({
-              title: "",
-              description: "",
-              status: "TODO",
-              priority: "MEDIUM",
-            });
-          }}
-        >
-          <form onSubmit={createOrUpdateTicket} className='space-y-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>
-                Title
-              </label>
-              <input
-                type='text'
-                required
-                value={ticketData.title}
-                onChange={(e) =>
-                  setTicketData({ ...ticketData, title: e.target.value })
-                }
-                className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
-              />
+                            )}
+                          </Draggable>
+                        ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              ))}
             </div>
+          </DragDropContext>
+        </main>
 
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>
-                Description
-              </label>
-              <textarea
-                required
-                value={ticketData.description}
-                onChange={(e) =>
-                  setTicketData({ ...ticketData, description: e.target.value })
-                }
-                className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>
-                Priority
-              </label>
-              <select
-                value={ticketData.priority}
-                onChange={(e) =>
-                  setTicketData({
-                    ...ticketData,
-                    priority: e.target.value as any,
-                  })
-                }
-                className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
-              >
-                <option value='LOW'>Low</option>
-                <option value='MEDIUM'>Medium</option>
-                <option value='HIGH'>High</option>
-                <option value='URGENT'>Urgent</option>
-              </select>
-            </div>
-
-            {editingTicket && (
+        {/* Modal for Creating/Editing Tickets */}
+        {isModalOpen && (
+          <Modal
+            title={editingTicket ? "Edit Ticket" : "New Ticket"}
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingTicket(null);
+              setTicketData({
+                title: "",
+                description: "",
+                status: "TODO",
+                priority: "MEDIUM",
+              });
+            }}
+          >
+            <form onSubmit={createOrUpdateTicket} className='space-y-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700'>
-                  Status
+                  Title
                 </label>
-                <select
-                  value={ticketData.status}
+                <input
+                  type='text'
+                  required
+                  value={ticketData.title}
+                  onChange={(e) =>
+                    setTicketData({ ...ticketData, title: e.target.value })
+                  }
+                  className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
+                />
+              </div>
+
+              <div>
+                <label className='block text-sm font-medium text-gray-700'>
+                  Description
+                </label>
+                <textarea
+                  required
+                  value={ticketData.description}
                   onChange={(e) =>
                     setTicketData({
                       ...ticketData,
-                      status: e.target.value as any,
+                      description: e.target.value,
                     })
                   }
                   className='mt-1 w-full p-2 border border-gray-300 rounded-lg'
-                >
-                  <option value='TODO'>To Do</option>
-                  <option value='IN_PROGRESS'>In Progress</option>
-                  <option value='IN_REVIEW'>In Review</option>
-                  <option value='RESOLVED'>Resolved</option>
-                </select>
+                  rows={3}
+                />
               </div>
-            )}
 
-            <div className='flex justify-end space-x-3'>
-              <Button
-                variant='outline'
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setEditingTicket(null);
-                  setTicketData({
-                    title: "",
-                    description: "",
-                    status: "TODO",
-                    priority: "MEDIUM",
-                  });
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type='submit'>
-                {editingTicket ? "Update" : "Create"}
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </div>
+              <SelectField
+                label='Priority'
+                value={ticketData.priority}
+                onChange={(newValue) =>
+                  setTicketData({ ...ticketData, priority: newValue })
+                }
+                options={priorityOptions}
+              />
+
+              {editingTicket && (
+                <SelectField
+                  label='Status'
+                  value={ticketData.status}
+                  onChange={(newValue) =>
+                    setTicketData({ ...ticketData, status: newValue })
+                  }
+                  options={statusOptions}
+                />
+              )}
+
+              <div className='flex justify-end space-x-3'>
+                <Button
+                  variant='outline'
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingTicket(null);
+                    setTicketData({
+                      title: "",
+                      description: "",
+                      status: "TODO",
+                      priority: "MEDIUM",
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type='submit'>
+                  {editingTicket ? "Update" : "Create"}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+      </div>
+    </AuthLayout>
   );
 }

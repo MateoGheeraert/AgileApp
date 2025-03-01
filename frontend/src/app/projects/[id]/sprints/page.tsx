@@ -6,6 +6,10 @@ import Cookies from "js-cookie";
 import Link from "next/link";
 import Button from "@/app/components/Button";
 import { format } from "date-fns";
+import AuthLayout from "@/app/components/AuthLayout";
+import Modal from "@/app/components/Modal";
+import InputField from "@/app/components/InputField";
+import { Pencil, Trash } from "lucide-react";
 
 interface Sprint {
   _id: string;
@@ -17,7 +21,7 @@ interface Sprint {
 export default function SprintsPage() {
   const params = useParams();
   const [sprints, setSprints] = useState<Sprint[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isModalOpen, setisModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
   const [newSprint, setNewSprint] = useState({
@@ -100,7 +104,7 @@ export default function SprintsPage() {
 
       if (result.data?.createSprint) {
         setSprints([...sprints, result.data.createSprint]);
-        setIsCreating(false);
+        setisModalOpen(false);
         setNewSprint({ name: "", startDate: "", endDate: "" });
       }
     } catch (error) {
@@ -209,178 +213,181 @@ export default function SprintsPage() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Navbar */}
-      <nav className='bg-white shadow-sm'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between h-16 items-center'>
+    <AuthLayout>
+      <div>
+        <div className='flex justify-between items-center mb-6'>
+          <div className='mb-6'>
             <Link
               href={`/projects/${params.id}`}
               className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
             >
-              ← Back to Project
+              ← Back to Projects
             </Link>
           </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className='max-w-4xl mx-auto py-10 sm:px-6 lg:px-8 bg-white shadow-lg rounded-lg p-6'>
-        <h1 className='text-3xl font-bold text-black'>Sprints</h1>
-
-        {/* Create Sprint Button */}
-        <div className='mt-6 flex justify-center'>
-          <Button
-            onClick={() => {
-              setIsCreating(true);
-              setIsEditing(false);
-              setEditingSprint(null);
-              setNewSprint({ name: "", startDate: "", endDate: "" });
-            }}
-            className='w-full max-w-xs'
-          >
-            New Sprint
-          </Button>
+          {/* Create Sprint Button */}
+          <div className='mt-6 flex justify-center'>
+            <Button
+              onClick={() => {
+                setisModalOpen(true);
+                setIsEditing(false);
+                setEditingSprint(null);
+                setNewSprint({ name: "", startDate: "", endDate: "" });
+              }}
+              className='w-full max-w-xs'
+            >
+              New Sprint
+            </Button>
+          </div>
         </div>
 
-        {/* Sprint Creation Form */}
-        {isCreating && (
-          <div className='mt-6 bg-gray-50 p-4 rounded-lg shadow'>
-            <h2 className='text-lg font-semibold text-black'>
-              Create New Sprint
-            </h2>
-            <form onSubmit={handleCreateSprint} className='space-y-4 mt-4'>
-              <input
-                type='text'
-                placeholder='Sprint Name'
-                value={newSprint.name}
-                onChange={(e) =>
-                  setNewSprint({ ...newSprint, name: e.target.value })
-                }
-                className='w-full p-2 border border-gray-300 rounded-lg'
-              />
-              <input
-                type='date'
-                value={newSprint.startDate}
-                onChange={(e) =>
-                  setNewSprint({ ...newSprint, startDate: e.target.value })
-                }
-                className='w-full p-2 border border-gray-300 rounded-lg'
-              />
-              <input
-                type='date'
-                value={newSprint.endDate}
-                onChange={(e) =>
-                  setNewSprint({ ...newSprint, endDate: e.target.value })
-                }
-                className='w-full p-2 border border-gray-300 rounded-lg'
-              />
-              <div className='flex justify-end space-x-3'>
-                <Button variant='outline' onClick={() => setIsCreating(false)}>
-                  Cancel
-                </Button>
-                <Button type='submit'>Create Sprint</Button>
-              </div>
-            </form>
-          </div>
-        )}
+        {/* Main Content */}
+        <main className='w-full mx-auto py-10 sm:px-6 lg:px-8 bg-white shadow-lg rounded-lg p-6'>
+          <h1 className='text-3xl font-bold text-black'>Sprints</h1>
 
-        {/* Sprint Edit Form */}
-        {isEditing && editingSprint && (
-          <div className='mt-6 bg-gray-50 p-4 rounded-lg shadow'>
-            <h2 className='text-lg font-semibold text-black'>Edit Sprint</h2>
-            <form onSubmit={handleUpdateSprint} className='space-y-4 mt-4'>
-              <input
-                type='text'
-                placeholder='Sprint Name'
-                value={newSprint.name}
-                onChange={(e) =>
-                  setNewSprint({ ...newSprint, name: e.target.value })
-                }
-                className='w-full p-2 border border-gray-300 rounded-lg'
-              />
-              <input
-                type='date'
-                value={newSprint.startDate}
-                onChange={(e) =>
-                  setNewSprint({ ...newSprint, startDate: e.target.value })
-                }
-                className='w-full p-2 border border-gray-300 rounded-lg'
-              />
-              <input
-                type='date'
-                value={newSprint.endDate}
-                onChange={(e) =>
-                  setNewSprint({ ...newSprint, endDate: e.target.value })
-                }
-                className='w-full p-2 border border-gray-300 rounded-lg'
-              />
-              <div className='flex justify-end space-x-3'>
-                <Button
-                  variant='outline'
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditingSprint(null);
-                    setNewSprint({ name: "", startDate: "", endDate: "" });
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type='submit'>Update Sprint</Button>
-              </div>
-            </form>
-          </div>
-        )}
+          {/* Sprint Creation Form */}
+          {isModalOpen && (
+            <Modal
+              title='Create New Sprint'
+              onClose={() => setisModalOpen(false)}
+            >
+              <form onSubmit={handleCreateSprint} className='space-y-4 mt-4'>
+                <InputField
+                  label='Sprint Name'
+                  placeholder='Enter sprint name'
+                  value={newSprint.name}
+                  onChange={(newValue) =>
+                    setNewSprint({ ...newSprint, name: newValue })
+                  }
+                />
 
-        {/* Sprint List */}
-        <ul className='mt-6 space-y-3'>
-          {sprints.length === 0 ? (
-            <p className='text-gray-500 text-center'>No sprints available.</p>
-          ) : (
-            sprints.map((sprint) => (
-              <li
-                key={sprint._id}
-                className='bg-white p-4 rounded-lg shadow hover:shadow-md transition'
-              >
-                <div className='flex justify-between items-center'>
-                  <Link
-                    href={`/projects/${params.id}/sprints/${sprint._id}`}
-                    className='block'
+                <InputField
+                  label='Start Date'
+                  type='date'
+                  value={newSprint.startDate}
+                  onChange={(newValue) =>
+                    setNewSprint({ ...newSprint, startDate: newValue })
+                  }
+                />
+
+                <InputField
+                  label='End Date'
+                  type='date'
+                  value={newSprint.endDate}
+                  onChange={(newValue) =>
+                    setNewSprint({ ...newSprint, endDate: newValue })
+                  }
+                />
+                <div className='flex justify-end space-x-3'>
+                  <Button
+                    variant='outline'
+                    onClick={() => setisModalOpen(false)}
                   >
-                    <h2 className='text-lg font-semibold text-primaryBlue-500 hover:text-primaryBlue-600'>
-                      {sprint.name}
-                    </h2>
-                    <p className='text-sm text-gray-600'>
-                      {format(new Date(sprint.startDate), "dd/MM/yyyy")} -{" "}
-                      {format(new Date(sprint.endDate), "dd/MM/yyyy")}
-                    </p>
-                  </Link>
-                  <div className='flex space-x-2'>
-                    <Button
-                      variant='outline'
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleEditSprint(sprint);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant='danger'
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleDeleteSprint(sprint._id);
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </div>
+                    Cancel
+                  </Button>
+                  <Button type='submit'>Create Sprint</Button>
                 </div>
-              </li>
-            ))
+              </form>
+            </Modal>
           )}
-        </ul>
-      </main>
-    </div>
+
+          {/* Sprint Edit Form */}
+          {isEditing && editingSprint && (
+            <Modal title='Edit Sprint' onClose={() => setIsEditing(false)}>
+              <form onSubmit={handleUpdateSprint} className='space-y-4 mt-4'>
+                <InputField
+                  label='Sprint Name'
+                  placeholder='Enter sprint name'
+                  value={newSprint.name}
+                  onChange={(newValue) =>
+                    setNewSprint({ ...newSprint, name: newValue })
+                  }
+                />
+
+                <InputField
+                  label='Start Date'
+                  type='date'
+                  value={newSprint.startDate}
+                  onChange={(newValue) =>
+                    setNewSprint({ ...newSprint, startDate: newValue })
+                  }
+                />
+
+                <InputField
+                  label='End Date'
+                  type='date'
+                  value={newSprint.endDate}
+                  onChange={(newValue) =>
+                    setNewSprint({ ...newSprint, endDate: newValue })
+                  }
+                />
+                <div className='flex justify-end space-x-3'>
+                  <Button
+                    variant='outline'
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditingSprint(null);
+                      setNewSprint({ name: "", startDate: "", endDate: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type='submit'>Update Sprint</Button>
+                </div>
+              </form>
+            </Modal>
+          )}
+
+          {/* Sprint List */}
+          <ul className='mt-6 space-y-3'>
+            {sprints.length === 0 ? (
+              <p className='text-gray-500 text-center'>No sprints available.</p>
+            ) : (
+              sprints.map((sprint) => (
+                <li
+                  key={sprint._id}
+                  className='bg-white p-4 rounded-lg shadow hover:shadow-md transition'
+                >
+                  <div className='flex justify-between items-center'>
+                    <Link
+                      href={`/projects/${params.id}/sprints/${sprint._id}`}
+                      className='block'
+                    >
+                      <h2 className='text-lg font-semibold text-primaryBlue-500 hover:text-primaryBlue-600'>
+                        {sprint.name}
+                      </h2>
+                      <p className='text-sm text-gray-600'>
+                        {format(new Date(sprint.startDate), "dd/MM/yyyy")} -{" "}
+                        {format(new Date(sprint.endDate), "dd/MM/yyyy")}
+                      </p>
+                    </Link>
+                    <div className='flex space-x-2'>
+                      <Button
+                        variant='outline'
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleEditSprint(sprint);
+                        }}
+                      >
+                        <Pencil className='w-4 h-4' />
+                      </Button>
+
+                      <Button
+                        variant='danger'
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDeleteSprint(sprint._id);
+                        }}
+                      >
+                        <Trash className='w-4 h-4' />
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+        </main>
+      </div>
+    </AuthLayout>
   );
 }
