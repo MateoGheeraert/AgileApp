@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
-import Button from "../components/reusable/Button";
-import Cookies from "js-cookie";
-
 interface Task {
   _id: string;
   title: string;
@@ -60,9 +57,9 @@ export default function TasksPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -306,13 +303,6 @@ export default function TasksPage() {
             )}
           </div>
         )}
-
-        {/* Add Task Button */}
-        <div className='fixed bottom-8 right-8'>
-          <Button className='rounded-full w-14 h-14 flex items-center justify-center text-2xl'>
-            +
-          </Button>
-        </div>
       </div>
     </AuthLayout>
   );

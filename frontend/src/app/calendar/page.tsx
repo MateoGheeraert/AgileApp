@@ -44,7 +44,7 @@ export default function CalendarPage() {
             body: JSON.stringify({
               query: `
               query {
-                activeSprints {
+                sprints {
                   _id
                   name
                   startDate
@@ -59,12 +59,14 @@ export default function CalendarPage() {
           }
         );
 
+        console.log(response);
         const { data, errors } = await response.json();
         if (errors) throw new Error(errors[0].message);
+        console.log(data);
 
         setSprints(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data.activeSprints.map((sprint: any) => ({
+          data.sprints.map((sprint: any) => ({
             _id: sprint._id,
             name: sprint.name,
             startDate: sprint.startDate,
@@ -123,13 +125,13 @@ export default function CalendarPage() {
 
   const renderCalendarDays = () => {
     const days = [
-      "Zondag",
       "Maandag",
       "Dinsdag",
       "Woensdag",
       "Donderdag",
       "Vrijdag",
       "Zaterdag",
+      "Zondag",
     ];
 
     return (
@@ -151,6 +153,8 @@ export default function CalendarPage() {
     const monthEnd = endOfMonth(currentMonth);
     const startDate = new Date(monthStart);
     const endDate = new Date(monthEnd);
+    const today = new Date(); // Get today's date
+    today.setHours(0, 0, 0, 0); // Normalize time for date comparison
 
     const dateFormat = "d";
 
@@ -163,7 +167,7 @@ export default function CalendarPage() {
     const firstDayOfMonth = startDate.getDay();
     if (firstDayOfMonth > 0) {
       const prevMonthDays: Date[] = [];
-      for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      for (let i = firstDayOfMonth - 2; i >= 0; i--) {
         const day = new Date(startDate);
         day.setDate(startDate.getDate() - (i + 1));
         prevMonthDays.push(day);
@@ -234,15 +238,28 @@ export default function CalendarPage() {
                   </div>
 
                   <div className='mt-1 space-y-1 max-h-[80px] overflow-y-auto'>
-                    {daySprints.map((sprint) => (
-                      <div
-                        key={sprint._id}
-                        className='text-xs p-1 rounded bg-green-100 text-green-800 truncate'
-                        title={`${sprint.name} (${sprint.projectName})`}
-                      >
-                        {sprint.name}
-                      </div>
-                    ))}
+                    {daySprints.map((sprint) => {
+                      const sprintStart = new Date(sprint.startDate);
+                      const sprintEnd = new Date(sprint.endDate);
+
+                      let bgColor = "bg-green-100 text-green-800"; // Default for active sprint
+
+                      if (sprintEnd < today) {
+                        bgColor = "bg-red-100 text-red-800"; // Past sprint (red)
+                      } else if (sprintStart > today) {
+                        bgColor = "bg-orange-100 text-orange-800"; // Future sprint (orange)
+                      }
+
+                      return (
+                        <div
+                          key={sprint._id}
+                          className={`text-xs p-1 rounded ${bgColor} truncate`}
+                          title={`${sprint.name} (${sprint.projectName})`}
+                        >
+                          {sprint.name}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -292,9 +309,11 @@ export default function CalendarPage() {
                 key={sprint._id}
                 className='border-l-4 border-green-500 bg-white p-4 shadow rounded-lg'
               >
-                <h3 className='font-medium text-lg'>{sprint.name}</h3>
+                <h3 className='font-medium text-lg text-black'>
+                  {sprint.name}
+                </h3>
                 <p className='text-gray-500 text-sm'>{sprint.projectName}</p>
-                <div className='flex justify-between mt-2 text-sm'>
+                <div className='flex justify-between mt-2 text-sm text-black'>
                   <span>
                     Start: {format(new Date(sprint.startDate), "MMM d, yyyy")}
                   </span>
