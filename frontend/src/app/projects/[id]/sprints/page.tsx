@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import Cookies from "js-cookie";
 import Link from "next/link";
 import Button from "@/app/components/reusable/Button";
 import { format } from "date-fns";
@@ -38,9 +37,9 @@ export default function SprintsPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -76,9 +75,9 @@ export default function SprintsPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -119,9 +118,9 @@ export default function SprintsPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -183,9 +182,9 @@ export default function SprintsPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `

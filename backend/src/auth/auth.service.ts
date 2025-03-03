@@ -6,8 +6,10 @@ import { RegisterInput } from './dto/register.input';
 import { LoginInput } from './dto/login.input';
 import { AuthResponse } from './models/auth.model';
 import { JwtService } from '@nestjs/jwt';
-// Import bcrypt with require to avoid TypeScript errors
-const bcrypt = require('bcrypt');
+import { Response } from 'express';
+import * as bcrypt from 'bcrypt';
+import { CookieRequest } from './interfaces/cookie-request.interface';
+import { JwtPayload, TokenResponse } from './interfaces/jwt.interface';
 
 @Injectable()
 export class AuthService {
@@ -16,14 +18,64 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  private generateToken(user: User): string {
-    return this.jwtService.sign(
-      { sub: user._id, email: user.email },
-      { secret: process.env.JWT_SECRET || 'secretKey' },
-    );
+  private generateTokens(user: User): {
+    accessToken: string;
+    refreshToken: string;
+  } {
+    const payload: JwtPayload = { sub: user._id, email: user.email };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: '15m',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
+
+    return { accessToken, refreshToken };
   }
 
-  async register(registerInput: RegisterInput): Promise<AuthResponse> {
+  private setTokenCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
+    // Set access token cookie
+    res.cookie('token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    // Set refresh token cookie
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  }
+
+  async validateUser(req: CookieRequest): Promise<User> {
+    if (!req.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    const user = await this.userModel.findById(req.user.sub);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  async register(
+    registerInput: RegisterInput,
+    res: Response,
+  ): Promise<AuthResponse> {
     const existingUser = await this.userModel.findOne({
       email: registerInput.email,
     });
@@ -31,58 +83,63 @@ export class AuthService {
       throw new UnauthorizedException('User with this email already exists');
     }
 
-    try {
-      // Hash the password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(
-        registerInput.password,
-        saltRounds,
-      );
+    const hashedPassword = await bcrypt.hash(registerInput.password, 10);
+    const user = new this.userModel({
+      email: registerInput.email,
+      passwordHash: hashedPassword,
+      name: registerInput.name,
+    });
 
-      // Create and save the user
-      const user = new this.userModel({
-        email: registerInput.email,
-        passwordHash: hashedPassword,
-        name: registerInput.name,
+    await user.save();
+    const { accessToken, refreshToken } = this.generateTokens(user);
+
+    this.setTokenCookies(res, accessToken, refreshToken);
+
+    return { token: accessToken, user };
+  }
+
+  async login(loginInput: LoginInput, res: Response): Promise<AuthResponse> {
+    const user = await this.userModel.findOne({ email: loginInput.email });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const isValid = await bcrypt.compare(
+      loginInput.password,
+      user.passwordHash,
+    );
+    if (!isValid) throw new UnauthorizedException('Invalid credentials');
+
+    const { accessToken, refreshToken } = this.generateTokens(user);
+
+    this.setTokenCookies(res, accessToken, refreshToken);
+
+    return { token: accessToken, user };
+  }
+
+  async refreshToken(
+    req: CookieRequest,
+    res: Response,
+  ): Promise<TokenResponse> {
+    const refreshToken = req.cookies.refresh_token;
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
       });
 
-      await user.save();
-      const token = this.generateToken(user);
-
-      return { token, user };
-    } catch (err) {
-      console.error('Registration error:', err);
-      throw new UnauthorizedException('Error during registration process');
-    }
-  }
-
-  async login(loginInput: LoginInput): Promise<AuthResponse> {
-    try {
-      const user = await this.userModel.findOne({ email: loginInput.email });
+      const user = await this.userModel.findById(payload.sub);
       if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const isValid = await bcrypt.compare(
-        loginInput.password,
-        user.passwordHash,
-      );
-      if (!isValid) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
+      const tokens = this.generateTokens(user);
+      this.setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
 
-      const token = this.generateToken(user);
-      return { token, user };
-    } catch (err) {
-      if (err instanceof UnauthorizedException) {
-        throw err;
-      }
-      console.error('Login error:', err);
-      throw new UnauthorizedException('Error during login process');
+      return { accessToken: tokens.accessToken };
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
-  }
-
-  async validateUser(userId: string): Promise<User | null> {
-    return this.userModel.findById(userId);
   }
 }

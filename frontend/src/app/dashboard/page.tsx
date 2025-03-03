@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import Cookies from "js-cookie";
 
 interface DashboardStats {
   totalProjects: number;
@@ -32,17 +31,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, you would fetch this data from your API
-    // For now, we'll simulate it with mock data
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
 
         const response = await fetch("http://localhost:4000/graphql", {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${Cookies.get("token")}`,
           },
           body: JSON.stringify({
             query: `

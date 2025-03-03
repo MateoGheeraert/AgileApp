@@ -10,6 +10,7 @@ import { SprintModule } from './sprint/sprint.module';
 import { TicketModule } from './ticket/ticket.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validate } from './config/env.validation';
+import { Request, Response } from 'express';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { validate } from './config/env.validation';
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         uri: configService.getOrThrow<string>('MONGODB_URI'),
       }),
       inject: [ConfigService],
@@ -30,7 +31,10 @@ import { validate } from './config/env.validation';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
       introspection: true,
-      context: ({ req }: { req: Request }) => ({ req }),
+      context: ({ req, res }: { req: Request; res: Response }) => ({
+        req,
+        res,
+      }),
     }),
     AuthModule,
     ProjectModule,

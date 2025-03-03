@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import AuthLayout from "../components/AuthLayout";
-import Cookies from "js-cookie";
 import {
   format,
   startOfMonth,
@@ -38,9 +37,9 @@ export default function CalendarPage() {
             "http://localhost:4000/graphql",
           {
             method: "POST",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${Cookies.get("token")}`,
             },
             body: JSON.stringify({
               query: `

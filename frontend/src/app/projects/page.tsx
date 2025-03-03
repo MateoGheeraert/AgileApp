@@ -2,11 +2,11 @@
 
 import { useState, useEffect, SetStateAction } from "react";
 import Link from "next/link";
-import Cookies from "js-cookie";
 import Button from "../components/reusable/Button";
 import AuthLayout from "../components/AuthLayout";
 import Modal from "../components/reusable/Modal";
 import InputField from "../components/reusable/InputField";
+
 interface Project {
   _id: string;
   name: string;
@@ -31,9 +31,9 @@ export default function ProjectsPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -66,9 +66,9 @@ export default function ProjectsPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `

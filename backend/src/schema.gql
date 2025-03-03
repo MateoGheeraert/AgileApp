@@ -72,6 +72,7 @@ enum TicketPriority {
 
 type Query {
   hello: String!
+  me: User
   projects: [Project!]!
   project(id: ID!): Project!
   projectCount: Float!
@@ -92,6 +93,8 @@ type Query {
 type Mutation {
   register(input: RegisterInput!): AuthResponse!
   login(input: LoginInput!): AuthResponse!
+  refreshToken: String!
+  logout: Boolean!
   createProject(name: String!, description: String): Project!
   createSprint(input: CreateSprintInput!): Sprint!
   updateSprint(id: ID!, input: UpdateSprintInput!): Sprint!

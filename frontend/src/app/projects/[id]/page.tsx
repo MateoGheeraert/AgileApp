@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Cookies from "js-cookie";
 import Button from "@/app/components/reusable/Button";
 import AuthLayout from "@/app/components/AuthLayout";
 
@@ -23,9 +22,9 @@ export default function ProjectPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `

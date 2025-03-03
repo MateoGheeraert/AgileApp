@@ -8,7 +8,6 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 
 interface User {
   _id: string;
@@ -20,15 +19,15 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_COOKIE_NAME = "token"; // Consistent cookie name
-const TOKEN_EXPIRY_DAYS = 7; // Centralized token expiry
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -36,30 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Server URL should be in an environment variable
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql";
-
-  useEffect(() => {
-    // Check for stored token and validate it
-    const token = Cookies.get(TOKEN_COOKIE_NAME);
-    if (token) {
-      validateToken(token);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const validateToken = async (token: string) => {
-    setIsLoading(true);
-    setError(null);
-
+  const validateSession = async () => {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           query: `
@@ -74,33 +56,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       });
 
-      const responseData = await response.json();
+      const data = await response.json();
 
-      if (responseData.errors) {
-        // Handle GraphQL errors
-        console.error("GraphQL errors:", responseData.errors);
-        Cookies.remove(TOKEN_COOKIE_NAME);
-        setUser(null);
-        setError("Session expired. Please log in again.");
-        return;
-      }
-
-      if (responseData.data?.me) {
-        setUser(responseData.data.me);
+      if (data.data?.me) {
+        setUser(data.data.me);
       } else {
-        // Token is invalid or expired
-        Cookies.remove(TOKEN_COOKIE_NAME);
-        setUser(null);
+        // Try to refresh the token
+        const refreshResponse = await fetch(API_URL, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: `
+              mutation {
+                refreshToken
+              }
+            `,
+          }),
+        });
+
+        const refreshData = await refreshResponse.json();
+
+        if (refreshData.data?.refreshToken) {
+          // Retry fetching user data
+          await validateSession();
+        } else {
+          setUser(null);
+          if (!window.location.pathname.startsWith("/login")) {
+            router.push("/login");
+          }
+        }
       }
     } catch (error) {
-      console.error("Token validation failed:", error);
-      Cookies.remove(TOKEN_COOKIE_NAME);
+      console.error("Session validation error:", error);
       setUser(null);
-      setError("Authentication error. Please try again.");
+      if (!window.location.pathname.startsWith("/login")) {
+        router.push("/login");
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Check authentication status on mount and after refresh
+  useEffect(() => {
+    validateSession();
+  }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -109,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -116,7 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           query: `
             mutation Login($input: LoginInput!) {
               login(input: $input) {
-                token
                 user {
                   _id
                   email
@@ -142,13 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (responseData.data?.login) {
-        // Set cookie with secure options
-        Cookies.set(TOKEN_COOKIE_NAME, responseData.data.login.token, {
-          expires: TOKEN_EXPIRY_DAYS,
-          sameSite: "strict",
-          secure: process.env.NODE_ENV === "production",
-        });
-
         setUser(responseData.data.login.user);
         router.push("/dashboard");
       } else {
@@ -171,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -178,7 +175,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           query: `
             mutation Register($input: RegisterInput!) {
               register(input: $input) {
-                token
                 user {
                   _id
                   email
@@ -204,13 +200,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (responseData.data?.register) {
-        // Set cookie with secure options
-        Cookies.set(TOKEN_COOKIE_NAME, responseData.data.register.token, {
-          expires: TOKEN_EXPIRY_DAYS,
-          sameSite: "strict",
-          secure: process.env.NODE_ENV === "production",
-        });
-
         setUser(responseData.data.register.user);
         router.push("/dashboard");
       } else {
@@ -226,10 +215,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    Cookies.remove(TOKEN_COOKIE_NAME);
-    setUser(null);
-    router.push("/login");
+  const logout = async () => {
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: `
+            mutation {
+              logout
+            }
+          `,
+        }),
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+      router.push("/login");
+    }
   };
 
   return (

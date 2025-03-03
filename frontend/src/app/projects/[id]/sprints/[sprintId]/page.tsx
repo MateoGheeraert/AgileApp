@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Cookies from "js-cookie";
 import {
   DragDropContext,
   Droppable,
@@ -87,9 +86,9 @@ export default function SprintDetailPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -126,9 +125,9 @@ export default function SprintDetailPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -191,9 +190,9 @@ export default function SprintDetailPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -291,9 +290,9 @@ export default function SprintDetailPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({ query: mutation, variables }),
       });
@@ -348,9 +347,9 @@ export default function SprintDetailPage() {
     try {
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
@@ -387,9 +386,9 @@ export default function SprintDetailPage() {
 
       const response = await fetch("http://localhost:4000/graphql", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Cookies.get("token")}`,
         },
         body: JSON.stringify({
           query: `
