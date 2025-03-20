@@ -445,7 +445,7 @@ export default function SprintDetailPage() {
         <div className='flex justify-between items-center mb-6'>
           <div className='mb-6'>
             <Link
-              href={`/projects/${params.id}/sprints`}
+              href={`/projects/${params.id}`}
               className='text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors'
             >
               ← Terug naar projecten

@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Button from "@/app/components/reusable/Button";
 import AuthLayout from "@/app/components/AuthLayout";
+import SprintsSection from "@/app/components/SprintSection";
 
 interface Project {
   _id: string;
@@ -84,16 +84,11 @@ export default function ProjectPage() {
           {project.description && (
             <p className='mt-2 text-gray-600 text-lg'>{project.description}</p>
           )}
-
-          <div className='mt-6 flex justify-center'>
-            <Button
-              as='a'
-              href={`/projects/${params.id}/sprints`}
-              className='w-full max-w-xs'
-            >
-              Bekijk sprints
-            </Button>
-          </div>
+          <SprintsSection
+            projectId={
+              Array.isArray(params.id) ? params.id[0] : params.id ?? ""
+            }
+          />
         </div>
       </div>
     </AuthLayout>
